@@ -404,7 +404,7 @@ async function syncSupplierDirectoryNow(){
 
 async function refresh(){
   cache.items=await loadItemsReliable();
-  const jobs=[['suppliers','suppliers',{order:'name'}],['purchases','purchase_requests',{order:'created_at'}],['requestItems','purchase_request_items',{order:'id'}],['quotes','purchase_quotes',{order:'received_at'}],['consultations','purchase_supplier_consultations',{order:'created_at'}],['audit','purchase_audit_log',{order:'changed_at'}],['profiles','profiles',{order:'name'}],['approvals','purchase_approvals',{order:'approved_at'}],['receipts','purchase_receipts',{order:'received_at'}],['receiptItems','purchase_receipt_items',{order:'id'}],['stockMovements','stock_movements',{order:'created_at',limit:30}]];
+  const jobs=[['suppliers','suppliers',{order:'name'}],['purchases','purchase_requests',{order:'created_at'}],['requestItems','purchase_request_items',{order:'id'}],['quotes','purchase_quotes',{order:'received_at'}],['consultations','purchase_supplier_consultations',{order:'created_at'}],['audit','purchase_audit_log',{order:'changed_at'}],['profiles','profiles',{order:'name'}],['receipts','purchase_receipts',{order:'created_at'}],['receiptItems','purchase_receipt_items',{order:'id'}],['stockMovements','stock_movements',{order:'created_at',limit:30}]];
   await Promise.all(jobs.map(async([key,table,opts])=>{try{cache[key]=await query(table,opts)}catch(e){console.warn('Falha ao carregar '+table,e);cache[key]=cache[key]||[]}}));
   try{cache.stockCenters=await query('item_stock_centers',{order:'id'})}catch(e){console.warn('Falha ao carregar estoques por centro',e);cache.stockCenters=cache.stockCenters||[]}
   cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;
@@ -1503,7 +1503,7 @@ function compareQuotes(purchaseId){
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
   if(!p){toast('Requisição não encontrada');return}
   const qs=cache.quotes.filter(q=>String(q.purchase_id)===String(purchaseId));
-  const valid=qs.filter(q=>Number(q.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
+  const valid=qs.filter(q=>q.status!=='Rejeitada'&&Number(q.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
   const winner=valid[0]||null;
   const rows=qs.slice().sort((a,b)=>{
     const av=Number(a.total_value||0),bv=Number(b.total_value||0);
@@ -1531,7 +1531,7 @@ function openQuoteApproval(quoteId,purchaseId){
   if(!q||!p){toast('Cotação ou requisição não encontrada');return}
   const total=Number(q.total_value||0);
   if(!(total>0)){toast('A cotação selecionada não possui um valor positivo');return}
-  const qs=cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&Number(x.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
+  const qs=cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&x.status!=='Rejeitada'&&Number(x.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
   const lowest=qs[0]||null;
   const isLowest=lowest&&String(lowest.id)===String(q.id);
   const sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));
@@ -1553,6 +1553,7 @@ async function approveQuote(quoteId,purchaseId){
   if(!q||!p){toast('Cotação ou requisição não encontrada');return}
   if(persistedApproval(purchaseId)){toast('Esta requisição já possui aprovação formal registrada');return}
   const total=Number(q.total_value||0);
+  if(q.status==='Rejeitada'){toast('A cotação foi rejeitada');return}
   if(!(total>0)){toast('A cotação selecionada não possui valor positivo');return}
   if(!q.supplier_id){toast('Vincule a cotação a um fornecedor antes da aprovação');return}
   const justification=String($('qa_just')?.value||'').trim();
@@ -1637,7 +1638,7 @@ async function sendPurchaseOrder(id){
   }
 }
 async function connectGmail(){try{if(!sb||!session){toast('Faça login antes de conectar o Gmail');return}const fresh=await ensureFreshSession();const r=await fetch(`${CONFIG.url}/functions/v1/gmail-oauth-start`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${fresh.access_token}`}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Não foi possível iniciar a conexão');if(!d.authorization_url)throw new Error('URL de autorização não retornada');window.open(d.authorization_url,'_blank','noopener,noreferrer');toast('Abrindo autorização do Gmail...')}catch(e){console.error(e);toast('Não foi possível conectar o Gmail: '+(e.message||'erro'))}}
-async function loadQuotes(){try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();renderQuotes();toast(d.inserted?`${d.inserted} nova(s) cotação(ões) recebida(s)`:'Gmail consultado. Nenhuma nova cotação encontrada.')}catch(e){console.error(e);toast('Não foi possível atualizar as cotações: '+(e.message||'erro'))}}
+async function loadQuotes(){try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();renderQuotes();toast(d.inserted?`${d.inserted} nova(s) cotação(ões). Confira o valor da proposta antes de aprovar`:'Gmail consultado. Nenhuma nova cotação encontrada.')}catch(e){console.error(e);toast('Não foi possível atualizar as cotações: '+(e.message||'erro'))}}
 function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Valor total:</b> ${money(q.total_value)}</p><hr><div style="white-space:pre-wrap;line-height:1.5">${esc(q.body_text||'Sem conteúdo registrado.')}</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
 
 function editQuote(id){
@@ -1667,6 +1668,7 @@ function editQuote(id){
 async function saveQuoteEdit(id){
   const q=cache.quotes.find(x=>String(x.id)===String(id));
   if(!q){toast('Cotação não encontrada');return}
+  if(persistedApproval(q.purchase_id)){toast('A cotação de uma compra aprovada não pode ser alterada');return}
   const totalRaw=$('q_total')?.value;
   const total=Number(totalRaw);
   if(totalRaw===''||!Number.isFinite(total)||total<0){toast('Informe um valor válido');return}
@@ -1700,7 +1702,7 @@ async function openQuoteResponseCenter(purchaseId){
  const consults=cache.consultations.filter(c=>String(c.purchase_id)===String(purchaseId));
  const quotes=cache.quotes.filter(q=>String(q.purchase_id)===String(purchaseId));
  const rows=consults.map(c=>{const sup=cache.suppliers.find(x=>String(x.id)===String(c.supplier_id));const q=quotes.find(x=>String(x.supplier_id)===String(c.supplier_id));return `<tr><td>${esc(sup?.name||'Fornecedor')}</td><td>${esc(sup?.order_email||sup?.email||'Sem e-mail')}</td><td>${esc(c.response_status||'Aguardando')}</td><td>${q?money(q.total_value):'—'}</td><td><button type="button" class="secondary" onclick="openManualQuote('${p.id}','${c.supplier_id}')">➕ Registrar proposta</button></td></tr>`}).join('');
- openModal(`<h2>📊 Central de respostas da cotação</h2><p class="muted">${esc(p.number||p.id)} · registre as propostas recebidas e compare os valores.</p><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>E-mail</th><th>Status</th><th>Valor</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5">Nenhum fornecedor foi consultado.</td></tr>'}</tbody></table></div><div class="actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button><button type="button" class="primary" onclick="compareQuotes('${p.id}');closeModal()">⚖️ Comparar propostas</button></div>`)
+ openModal(`<h2>📊 Central de respostas da cotação</h2><p class="muted">${esc(p.number||p.id)} · registre as propostas recebidas e compare os valores.</p><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>E-mail</th><th>Status</th><th>Valor</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5">Nenhum fornecedor foi consultado.</td></tr>'}</tbody></table></div><div class="actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button><button type="button" class="primary" onclick="compareQuotes('${p.id}')">⚖️ Comparar propostas</button></div>`)
 }
 function openManualQuote(purchaseId,supplierId){
  const p=cache.purchases.find(x=>String(x.id)===String(purchaseId)); const s=cache.suppliers.find(x=>String(x.id)===String(supplierId));
@@ -1775,8 +1777,9 @@ function purchaseProcess(id){
   const supName=x=>cache.suppliers.find(s=>String(s.id)===String(x))?.name||'Fornecedor não identificado';
   const hasReason=!!String(p.purchase_justification||p.reason||'').trim();
   const hasConsult=consults.length>0;
-  const hasQuotes=quotes.length>0;
-  const hasComparison=quotes.length>=2;
+  const validQuotes=quotes.filter(q=>q.status!=='Rejeitada'&&Number(q.total_value||0)>0);
+  const hasQuotes=validQuotes.length>0;
+  const hasComparison=validQuotes.length>=2;
   const hasSelection=!!String(p.selection_justification||'').trim() && !!p.supplier_id;
   const hasApproval=p.status==='Aprovada'||p.status==='Pedido emitido'||p.status==='Recebida'||!!p.approved_at;
   const hasSend=['Enviado ao fornecedor','Confirmado','Pedido emitido','Recebida'].includes(p.status);
@@ -1784,7 +1787,7 @@ function purchaseProcess(id){
     ['Justificativa da compra',hasReason,'Informe por que a aquisição é necessária.'],
     ['Pesquisa/consulta de preços',hasConsult,'Registre os fornecedores consultados.'],
     ['Cotações registradas',hasQuotes,'Registre as propostas recebidas.'],
-    ['Comparação de propostas',hasComparison,quotes.length<2?'O sistema considera a comparação pronta quando há pelo menos 2 cotações registradas.':'Comparação disponível.'],
+    ['Comparação de propostas',hasComparison,validQuotes.length<2?'São necessárias pelo menos 2 cotações válidas com valor positivo.':'Comparação disponível.'],
     ['Justificativa da escolha',hasSelection,'Registre por que o fornecedor foi escolhido.'],
     ['Aprovação',hasApproval,'Registre a aprovação da compra.'],
     ['Envio/pedido',hasSend,'Acompanhe o envio ao fornecedor e a emissão do pedido.']
@@ -1889,7 +1892,7 @@ async function sendQuoteRequests(purchaseId){
   let ok=0,fail=0; const errors=[];
   for(const c of eligible){
     try{await sendQuoteRequestToSupplier(purchaseId,c.supplier_id);ok++}
-    catch(e){fail++;errors.push(`${supName(c.supplier_id)}: ${e.message||'erro'}`)}
+    catch(e){fail++;errors.push(`${cache.suppliers.find(s=>String(s.id)===String(c.supplier_id))?.name||'Fornecedor'}: ${e.message||'erro'}`)}
   }
   await refresh(); purchaseProcess(purchaseId);
   toast(`Solicitações enviadas: ${ok}${fail?` · falhas: ${fail}`:''}`);
@@ -1919,7 +1922,8 @@ async function updateConsultation(id,statusValue){try{if(sb){const r=await sb.fr
 function generatePurchaseProcessPDF(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));if(!p)return;
   const quotes=cache.quotes.filter(q=>String(q.purchase_id)===String(id));const consults=cache.consultations.filter(c=>String(c.purchase_id)===String(id));
-  const checks=[!!String(p.purchase_justification||p.reason||'').trim(),consults.length>0,quotes.length>0,quotes.length>=2,!!String(p.selection_justification||'').trim()&&!!p.supplier_id,p.status==='Aprovada'||p.status==='Pedido emitido'||p.status==='Recebida'||!!p.approved_at,['Enviado ao fornecedor','Confirmado','Pedido emitido','Recebida'].includes(p.status)];
+  const validQuotes=quotes.filter(q=>q.status!=='Rejeitada'&&Number(q.total_value||0)>0);
+  const checks=[!!String(p.purchase_justification||p.reason||'').trim(),consults.length>0,validQuotes.length>0,validQuotes.length>=2,!!String(p.selection_justification||'').trim()&&!!p.supplier_id,p.status==='Aprovada'||p.status==='Pedido emitido'||p.status==='Recebida'||!!p.approved_at,['Enviado ao fornecedor','Confirmado','Pedido emitido','Recebida'].includes(p.status)];
   if(!checks.every(Boolean)){toast(`Processo incompleto: ${checks.filter(Boolean).length}/${checks.length}. Complete as pendências antes de gerar o documento.`);return}
   const supName=x=>cache.suppliers.find(s=>String(s.id)===String(x))?.name||'Não identificado';
   const {jsPDF}=window.jspdf||{};if(!jsPDF){toast('Gerador de PDF não carregou');return}const doc=new jsPDF();let y=18;const line=(txt,size=10)=>{doc.setFontSize(size);const lines=doc.splitTextToSize(String(txt||'-'),175);doc.text(lines,18,y);y+=lines.length*5+3;if(y>275){doc.addPage();y=18}};
@@ -2052,7 +2056,7 @@ async function openReceiving(id){
   const receivedByItem={};
   previousReceipts.forEach(x=>{
     const key=String(x.request_item_id);
-    receivedByItem[key]=(receivedByItem[key]||0)+Number(x.received_quantity||0);
+    receivedByItem[key]=(receivedByItem[key]||0)+Number(x.accepted_quantity||0);
   });
   const rows=items.map(ri=>{
     const it=cache.items.find(x=>String(x.id)===String(ri.item_id));
@@ -2067,7 +2071,7 @@ async function openReceiving(id){
   <div class="form-grid"><div class="field"><label>Número da NF *</label><input id="nf_number" autocomplete="off" inputmode="numeric" required autofocus placeholder="Digite o número da NF"></div><div class="field"><label>Série</label><input id="nf_series"></div><div class="field"><label>Data da NF</label><input id="nf_date" type="date"></div><div class="field"><label>Chave de acesso</label><input id="nf_key" autocomplete="off" inputmode="numeric" maxlength="44"></div><div class="field"><label>Valor recebido</label><input id="nf_value" type="number" step="0.01" value="${Number(p.total_value||0)}"></div></div>
   <div class="field"><label>Observações</label><input id="nf_notes" placeholder="Conferência, divergências, lote, validade etc."></div>
   <div class="process-banner process-complete"><b>🔐 Registro fiscal</b><div class="muted" style="margin-top:4px">A NF e as quantidades recebidas ficam registradas no histórico de auditoria do pedido.</div></div>
-  <h3>Itens recebidos</h3><p class="muted">Informe a quantidade física recebida. O que for <b>aceito</b> entra no estoque; o que for <b>rejeitado</b> fica registrado como divergência.</p><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Pedido</th><th>Já recebido</th><th>Recebido</th><th>Aceito</th><th>Rejeitado</th><th>Lote</th><th>Validade</th></tr></thead><tbody>${rows||'<tr><td colspan="10" style="padding:22px;text-align:center">Todos os itens deste pedido já foram recebidos.</td></tr>'}</tbody></table></div>
+  <h3>Itens recebidos</h3><p class="muted">Informe a quantidade física recebida. As quantidades <b>aceitas</b> encerram o saldo pendente do pedido; as <b>rejeitadas</b> permanecem pendentes. Atualize o saldo operacional pela sincronização do SAVE.</p><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Pedido</th><th>Já aceito</th><th>Recebido</th><th>Aceito</th><th>Rejeitado</th><th>Lote</th><th>Validade</th></tr></thead><tbody>${rows||'<tr><td colspan="10" style="padding:22px;text-align:center">Todos os itens deste pedido já foram recebidos.</td></tr>'}</tbody></table></div>
   <h3 style="margin-top:18px">Histórico de recebimentos</h3>${hist}
   <div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="saveReceiving('${id}')">💾 Registrar recebimento</button></div>`)
 }
@@ -2132,7 +2136,8 @@ async function saveReceiving(id){
         p_items:selected
       }
     });
-    if(error)throw error;
+    if(error){let message=error.message;try{const detail=await error.context?.json();message=detail?.error||message}catch(_){}throw new Error(message)}
+    if(data?.error||data?.ok===false)throw new Error(data.error||'Recebimento não registrado');
 
     await refresh();
     closeModal();
@@ -2387,12 +2392,16 @@ function predictiveRows(){
 
 <script id="hnss-6132-purchase-state">
 function persistedApproval(purchaseId){
-  return (cache.approvals||[]).find(a=>String(a.purchase_id)===String(purchaseId)&&String(a.decision||'').toLowerCase()==='aprovada')||null;
+  const p=(cache.purchases||[]).find(x=>String(x.id)===String(purchaseId));
+  if(!p||!p.approved_at||!['Aprovada','Pedido emitido','Enviado ao fornecedor','Confirmado','Recebida'].includes(String(p.status||'')))return null;
+  const log=(cache.audit||[]).find(a=>String(a.purchase_id)===String(purchaseId)&&String(a.entity_type||'')==='aprovacao');
+  const data=log?.new_data||{};
+  return {purchase_id:purchaseId,decision:'Aprovada',selected_quote_id:data.quote_id||null,approved_at:p.approved_at,approved_by:p.approved_by};
 }
 function hasPersistedApproval(purchaseId,quoteId){
   const p=(cache.purchases||[]).find(x=>String(x.id)===String(purchaseId));
   const a=persistedApproval(purchaseId);
-  return !!(p && a && p.status==='Aprovada' && p.approval_status==='Aprovada' && p.approved_at
+  return !!(p && a && p.approved_at
     && (!quoteId || String(a.selected_quote_id||'')===String(quoteId)));
 }
 function quoteDisplayStatus(q){
