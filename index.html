@@ -3,9 +3,66 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HNSS 6.0.1 TESTE — Evolução Arquitetural</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f7fb;color:#172033}button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh}.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#eef5ff,#f7fafc)}.card{background:#fff;border:1px solid #e4e8ef;border-radius:16px;box-shadow:0 10px 30px #17203312}.login-card{width:min(420px,100%);padding:30px}.brand{font-weight:800;font-size:22px;margin-bottom:6px}.muted{color:#697386}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #d6dce5;border-radius:10px;background:#fff}.primary{border:0;background:#1769e0;color:#fff;padding:11px 15px;border-radius:10px;font-weight:700}.secondary{border:1px solid #d6dce5;background:#fff;padding:10px 14px;border-radius:10px}.danger{color:#b42318}.sidebar{position:fixed;left:0;top:0;bottom:0;width:235px;background:#10233f;color:#fff;padding:22px 14px}.sidebar .brand{padding:0 10px 22px}.nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#d9e5f5;padding:12px;border-radius:9px;margin:3px 0}.nav button.active,.nav button:hover{background:#1c3a64;color:#fff}.main{margin-left:235px;padding:25px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.top h1{margin:0;font-size:26px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.kpi{padding:18px}.kpi strong{display:block;font-size:27px;margin-top:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.panel{padding:18px}.panel h2{font-size:17px;margin:0 0 15px}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:10px;border-bottom:1px solid #edf0f4;text-align:left;white-space:nowrap}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.ok{background:#e9f8ef;color:#137333}.warn{background:#fff4d6;color:#8a5a00}.crit{background:#fdecea;color:#b42318}.info{background:#e8f0ff;color:#1454b8}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.toolbar input{padding:10px;border:1px solid #d6dce5;border-radius:9px;min-width:220px}.modal{position:fixed;z-index:9999;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:5}.modal-box{width:min(1120px,96vw);max-width:1120px;max-height:94vh;overflow:auto;padding:26px}.modal-box .form-grid{gap:14px}.modal-box .field input,.modal-box .field select{padding:13px;font-size:15px}.modal-box h2{font-size:22px}.modal-box .table{font-size:14px}.modal-box .table th,.modal-box .table td{padding:11px 10px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.audit-detail{background:#f8fafc;border:1px solid #e5e9f0;border-radius:12px;padding:12px;margin-top:10px}.audit-change{display:grid;grid-template-columns:150px 1fr 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #edf0f4;font-size:13px}.audit-change:last-child{border-bottom:0}.audit-old{background:#fff0ef;padding:7px;border-radius:8px}.audit-new{background:#eef9f1;padding:7px;border-radius:8px}.process-banner{padding:12px 14px;border-radius:12px;margin-bottom:14px;border:1px solid #dfe5ee}.process-complete{background:#eef9f1;border-color:#b7e0c3}.process-incomplete{background:#fff8e8;border-color:#f1d58b}.disabled-btn{opacity:.5;cursor:not-allowed!important}.logout-side{color:#10233f!important;background:#fff!important;font-weight:800}.logout-top{font-weight:800;white-space:nowrap}@media(max-width:700px){.audit-change{grid-template-columns:1fr}.audit-change>div{width:100%}}.toast{position:fixed;right:20px;bottom:20px;background:#172033;color:#fff;padding:12px 16px;border-radius:10px;display:none;z-index:10}.dash-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.dash-head h2{margin:0;font-size:20px}.dash-sub{margin:4px 0 0}.dash-actions{display:flex;gap:8px}.dash-actions button{font-size:13px}.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.dash-kpi{padding:18px;position:relative;overflow:hidden}.dash-kpi .icon{font-size:22px}.dash-kpi .label{color:#697386;font-size:12px;font-weight:700;margin-top:8px}.dash-kpi .num{font-size:30px;font-weight:850;margin-top:5px}.dash-kpi .mini{font-size:12px;color:#697386;margin-top:4px}.dash-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:16px;margin-top:16px}.dash-card{padding:18px}.dash-card h3{margin:0;font-size:16px}.dash-card .sub{font-size:12px;color:#697386;margin:5px 0 14px}.progress{height:9px;background:#edf0f4;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:#1769e0;border-radius:99px}.stat-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #edf0f4}.stat-row:last-child{border-bottom:0}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}.dash-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.dash-quick button{padding:13px;text-align:left}.alert-list{display:grid;gap:8px}.alert{padding:11px 12px;border-radius:10px;background:#fff8e8;border:1px solid #f4dfab;font-size:13px}.alert.critical{background:#fff0ef;border-color:#f3c6c2}.alert strong{display:block;margin-bottom:3px}.dash-table td,.dash-table th{padding:9px}.dash-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.dash-link{border:0;background:none;color:#1769e0;font-weight:800;padding:4px}.dash-empty{padding:20px 0;text-align:center;color:#697386}@media(max-width:900px){.dash-kpis{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}@media(max-width:550px){.dash-kpis{grid-template-columns:1fr}.dash-quick{grid-template-columns:1fr}.dash-head{align-items:flex-start;gap:10px;flex-direction:column}}@media(max-width:900px){.sidebar{position:static;width:auto;display:flex;overflow:auto}.nav{display:flex;gap:4px}.nav button{white-space:nowrap}.main{margin-left:0;padding:15px}.kpis{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}@media(max-width:550px){.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
 
@@ -105,6 +162,25 @@ nav a,.nav-item,.menu-item{border-radius:10px!important;margin:3px 6px!important
 </style>
 
 <script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>
 window.HNSS_ARCHITECTURE = {
  version: "6.0.1",
  environment: "TESTE",
@@ -237,6 +313,25 @@ HNSS 6.1.32 TESTE | Fluxo de Compras Auditado
 <main class="main"><div class="top"><div><h1 id="pageTitle">Dashboard</h1><div id="userInfo" class="muted"></div></div><div style="display:flex;gap:8px;align-items:center"><button id="newBtn" class="primary">+ Novo</button><button id="logoutTop" class="secondary logout-top" type="button">Sair</button></div></div><section id="page-dashboard"></section><section id="page-estoque" class="hidden"></section><section id="page-inteligencia" class="hidden"></section><section id="page-preditivo" class="hidden"></section><section id="page-abc" class="hidden"></section><section id="page-ia" class="hidden"></section><section id="page-compras" class="hidden"></section><section id="page-fornecedores" class="hidden"></section><section id="page-produtos" class="hidden"></section><section id="page-recebimento" class="hidden"></section></main></div>
 <div id="modal" class="modal hidden"><div class="card modal-box"><div id="modalBody"></div></div></div><div id="toast" class="toast"></div>
 <script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>
 const CONFIG={url:'https://hdvahhymnrdsjrwzoroy.supabase.co',anonKey:'sb_publishable_cqbn65PyIJX-x0WTZA8N7g_nPProGPA'}; let sb=null,session=null,profile=null; let purchaseSaveBusy=false,receivingSaveBusy=false; let cache={items:[],suppliers:[],purchases:[],requestItems:[],orders:[],quotes:[],consultations:[],audit:[],profiles:[],approvals:[]};
 let sessionRefreshPromise=null;
 const $=id=>document.getElementById(id); const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -377,20 +472,10 @@ async function refresh(){
   cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;
   if(sb&&session) await syncSupplierDirectoryToDatabase(false);
 }
-
-async function testSupabaseConnection(){
-  try{
-    const r = await sb.from('profiles').select('id').limit(1);
-    if(r.error) console.warn('Supabase profiles:', r.error.message);
-    else console.log('Supabase conectado OK');
-  }catch(e){ console.warn('Falha Supabase:', e.message); }
-}
-
 async function boot(){
   try{
     if(!(CONFIG.url&&CONFIG.anonKey))throw new Error('Configuração do Supabase ausente.');
     sb=window.supabase.createClient(CONFIG.url,CONFIG.anonKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
-    testSupabaseConnection();
     sb.auth.onAuthStateChange((event,s)=>{
       session=s;
       if(event==='SIGNED_OUT'){profile=null;cache={items:[],suppliers:[],purchases:[],requestItems:[],orders:[],quotes:[],consultations:[],audit:[],profiles:[]};showLogin();return}
@@ -1579,7 +1664,26 @@ function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===S
 .smart-actions button{padding:9px 12px;font-size:13px}
 @media(max-width:900px){.smart-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:550px){.smart-grid{grid-template-columns:1fr}}
-</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
+</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
 async function sendPurchaseOrder(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
   if(!p)return;
@@ -2140,6 +2244,25 @@ function purchaseApprovalView(id){
   <div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`);
 }
 </script><script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>
 function intelNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function intelMoney(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(intelNum(v))}
 let intelCenterFilter='PRINCIPAL';
@@ -2279,6 +2402,25 @@ function predictiveRows(){return (cache.items||[]).map(i=>{const c30=Math.max(0,
 function renderPreditivo(){const rows=predictiveRows();const urgent=rows.filter(x=>x.risk==='urgent').length;const high=rows.filter(x=>x.risk==='high').length;const med=rows.filter(x=>x.risk==='medium').length;const seven=rows.filter(x=>x.days!==null&&x.days<=7).reduce((a,x)=>a+x.suggested,0);const total=rows.filter(x=>x.days!==null&&x.days<=30).reduce((a,x)=>a+x.value,0);const html=`<div class="predictive-hero"><div style="font-size:12px;font-weight:800;opacity:.82;letter-spacing:.06em">HNSS 4.0 · PLANEJAMENTO</div><h2 style="margin:6px 0 8px">Planejamento Preditivo</h2><div style="opacity:.9;max-width:800px">Projete o risco de ruptura usando o consumo dos últimos 30 dias, estoque atual, estoque mínimo e quantidades já em compra.</div></div><div class="predictive-note"><strong>Como funciona:</strong> a previsão usa o consumo de 30 dias como média diária. Ela é uma projeção operacional, não uma previsão estatística avançada. Itens sem histórico de consumo não recebem prazo estimado.</div><div class="predictive-grid"><div class="predictive-kpi"><div class="muted">Risco em até 7 dias</div><div class="v">${urgent}</div></div><div class="predictive-kpi"><div class="muted">Risco em até 15 dias</div><div class="v">${high}</div></div><div class="predictive-kpi"><div class="muted">Risco em até 30 dias</div><div class="v">${med}</div></div><div class="predictive-kpi"><div class="muted">Reposição urgente sugerida</div><div class="v">${intelNum(seven)}</div><div class="muted">unidades</div></div></div><div class="card" style="padding:18px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Mapa de risco de ruptura</h3><div class="muted">Valor estimado de reposição para itens com risco de até 30 dias: ${intelMoney(total)}.</div></div><div class="intel-actions"><button class="secondary" onclick="renderPreditivo()">🔄 Recalcular</button><button class="primary" onclick="go('inteligencia')">Ver inteligência de compras</button></div></div></div>${rows.length?`<div class="predictive-table"><table><thead><tr><th>Risco</th><th>Produto</th><th>Estoque</th><th>Consumo/dia</th><th>Em compra</th><th>Ruptura estimada</th><th>Estoque em 7d</th><th>Compra sugerida</th><th>Valor</th></tr></thead><tbody>${rows.slice(0,180).map(x=>`<tr><td><span class="predictive-risk ${x.risk}">${esc(x.label)}</span></td><td><strong>${esc(x.name||'')}</strong><div class="muted" style="font-size:11px">${esc(x.code||'')}</div></td><td>${intelNum(x.stock)}</td><td>${x.daily?intelNum(x.daily):'—'}</td><td>${intelNum(x.on)}</td><td>${x.days===null?'—':Math.round(x.days)+' dias'}</td><td>${intelNum(x.projected7)}</td><td><strong>${intelNum(x.suggested)}</strong></td><td>${intelMoney(x.value)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="card" style="padding:24px"><h3>Sem dados suficientes</h3><div class="muted">Não há itens com dados mínimos para projeção.</div></div>`}`;$('page-preditivo').innerHTML=html}
 </script>
 <script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>
 (function(){
   window.hnssAnalyserCotacao=function(rows){
     rows=Array.isArray(rows)?rows:[];
@@ -2293,6 +2435,25 @@ function renderPreditivo(){const rows=predictiveRows();const urgent=rows.filter(
 </script>
 
 <script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+>
 (function(){
   const AUDIT_KEY='hnss_hardening_audit_v1';
   function audit(action,data={}){try{const a=JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');a.push({at:new Date().toISOString(),action,...data});localStorage.setItem(AUDIT_KEY,JSON.stringify(a.slice(-500)));}catch(e){}}
@@ -2303,7 +2464,26 @@ function renderPreditivo(){const rows=predictiveRows();const urgent=rows.filter(
 <style id="hnss-6126-dashboard">
 .mgr-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}.mgr-card{padding:18px}.mgr-card .lab{font-size:11px;font-weight:800;color:#697386;text-transform:uppercase}.mgr-card .val{font-size:27px;font-weight:850;margin-top:6px}.mgr-card .meta{font-size:12px;color:#697386;margin-top:4px}.mgr-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:16px}.mgr-list{display:grid;gap:8px}.mgr-alert{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e7ebf1;border-radius:11px;background:#fbfcfe}.mgr-alert strong{font-size:13px}.mgr-alert span{font-size:12px;color:#697386;text-align:right}.mgr-actions{display:flex;gap:8px;flex-wrap:wrap}.mgr-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.mgr-strip>div{padding:12px;border:1px solid #edf0f4;border-radius:11px}.mgr-strip b{display:block;font-size:19px}.mgr-strip span{font-size:11px;color:#697386}@media(max-width:950px){.mgr-grid{grid-template-columns:1fr 1fr}.mgr-layout{grid-template-columns:1fr}}@media(max-width:560px){.mgr-grid,.mgr-strip{grid-template-columns:1fr}}
 </style>
-<script id="hnss-6126-dashboard-script">
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ id="hnss-6126-dashboard-script">
 function renderDashboard(){
  const items=cache.items||[], purchases=cache.purchases||[], receipts=cache.receipts||[];
  const synced=items.filter(i=>{const s=centerStocksFor(i.id);return (cache.stockCenters||[]).some(x=>String(x.item_id)===String(i.id))});
@@ -2326,7 +2506,26 @@ function renderDashboard(){
 <style id="hnss-6130-fix">
 .hnss-preprod-note{margin:0 0 14px;padding:11px 14px;border:1px solid #b9d5ff;background:#eef6ff;color:#174a8b;border-radius:12px;font-size:12px}
 </style>
-<script id="hnss-6130-save-authority">
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ id="hnss-6130-save-authority">
 function stockForOperational(i){
   if(!i?.id)return null;
   const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(i.id));
@@ -2362,7 +2561,26 @@ function predictiveRows(){
 }
 </script>
 
-<script id="hnss-6132-purchase-state">
+<script>
+
+// DIAGNOSTICO ESTOQUE SUPABASE - TESTE
+async function diagnosticoEstoque(){
+ try{
+   const tabelas=['items','stock_movements','item_stock_centers'];
+   for(const t of tabelas){
+     const r=await sb.from(t).select('*').limit(1);
+     if(r.error){
+       console.warn('ERRO TABELA '+t+':', r.error.message);
+     }else{
+       console.log('OK TABELA '+t, r.data);
+     }
+   }
+ }catch(e){
+   console.warn('ERRO DIAGNOSTICO:',e.message);
+ }
+}
+
+ id="hnss-6132-purchase-state">
 function persistedApproval(purchaseId){
   return (cache.approvals||[]).find(a=>String(a.purchase_id)===String(purchaseId)&&String(a.decision||'').toLowerCase()==='aprovada')||null;
 }
@@ -2383,3 +2601,4 @@ function purchaseCanOrder(p){
 </script>
 
 </body></html>
+<script>diagnosticoEstoque();</script>
