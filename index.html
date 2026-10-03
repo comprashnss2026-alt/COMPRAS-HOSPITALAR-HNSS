@@ -2377,19 +2377,3 @@ function purchaseCanOrder(p){
 </script>
 
 </body></html>
-// Ajuste leitura estoque HNSS - sem alterar banco
-async function carregarEstoqueDiretoSupabase(){
-  try{
-    const [itens, centros, movimentos] = await Promise.all([
-      sb.from('items').select('*'),
-      sb.from('item_stock_centers').select('*'),
-      sb.from('stock_movements').select('*')
-    ]);
-    console.log('ESTOQUE items:', itens.data?.length || 0, itens.error);
-    console.log('ESTOQUE centros:', centros.data?.length || 0, centros.error);
-    console.log('ESTOQUE movimentos:', movimentos.data?.length || 0, movimentos.error);
-    return {itens, centros, movimentos};
-  }catch(e){
-    console.error('Erro leitura estoque:', e);
-  }
-}
