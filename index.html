@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HNSS 6.0.1 TESTE — Evolução Arquitetural</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -260,16 +260,11 @@ window.HNSS_ARCHITECTURE = {
 }
 </style>
 </head>
-
-    <div id="hnss60Banner" style="position:fixed;bottom:12px;left:12px;z-index:99999;background:#10233f;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 8px 20px #0003">
-      HNSS 6.1.32 TESTE | Fluxo de Compras Auditado | Banco preservado
-    </div>
-    
-
-<div class="hnss603-tag">
-HNSS 6.1.32 TESTE | Fluxo de Compras Auditado
+<body data-hnss-version="6.1.32-TESTE" data-environment="production">
+<div id="hnss60Banner" style="position:fixed;bottom:12px;left:12px;z-index:99999;background:#10233f;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 8px 20px #0003">
+  HNSS 6.1.32 TESTE | Fluxo de Compras Auditado | Banco preservado
 </div>
-<body data-hnss-version="6.1.26-TESTE" data-environment="production">
+<div class="hnss603-tag">HNSS 6.1.32 TESTE | Fluxo de Compras Auditado</div>
 <div id="login" class="login"><div class="card login-card"><div class="brand">🏥 Compras Hospitalares</div><div class="muted">Sistema online de estoque e compras</div><form id="loginForm"><div class="field"><label>E-mail</label><input id="email" type="email" required autocomplete="email"></div><div class="field"><label>Senha</label><input id="password" type="password" required autocomplete="current-password"></div><button class="primary" style="width:100%">Entrar</button></form><div style="text-align:center;margin:14px 0;color:#697386;font-size:12px">OU</div><button id="googleLogin" type="button" class="secondary" style="width:100%">Continuar com Google</button><p id="loginMsg" class="muted" style="font-size:13px;margin-top:14px"></p></div></div>
 <div id="app" class="app hidden"><aside class="sidebar"><div class="brand">🏥 Compras Hospitalares</div><div class="nav"><button data-page="dashboard" class="active">📊 Dashboard</button><button data-page="estoque">📦 Estoque</button><button data-page="inteligencia">🧠 Inteligência de Compras</button><button data-page="preditivo">🔮 Planejamento Preditivo</button><button data-page="abc">📈 Curva ABC &amp; Consumo</button><button data-page="ia">🤖 IA de Gestão</button><button data-page="compras">🛒 Compras</button><button data-page="fornecedores">🏢 Fornecedores</button><button data-page="produtos">📦 Produtos e Preços</button><button data-page="recebimento">📥 Recebimento / NF</button></div><button id="logout" class="secondary logout-side" type="button" style="margin:18px 10px;width:calc(100% - 20px)">Sair da conta</button></aside>
 <main class="main"><div class="top"><div><h1 id="pageTitle">Dashboard</h1><div id="userInfo" class="muted"></div></div><div style="display:flex;gap:8px;align-items:center"><button id="newBtn" class="primary">+ Novo</button><button id="logoutTop" class="secondary logout-top" type="button">Sair</button></div></div><section id="page-dashboard"></section><section id="page-estoque" class="hidden"></section><section id="page-inteligencia" class="hidden"></section><section id="page-preditivo" class="hidden"></section><section id="page-abc" class="hidden"></section><section id="page-ia" class="hidden"></section><section id="page-compras" class="hidden"></section><section id="page-fornecedores" class="hidden"></section><section id="page-produtos" class="hidden"></section><section id="page-recebimento" class="hidden"></section></main></div>
@@ -1641,7 +1636,7 @@ async function sendPurchaseOrder(id){
     toast('Pedido NÃO enviado: '+(e?.message||'erro no envio'));
   }
 }
-async function connectGmail(){try{const r=await fetch(`${CONFIG.url}/functions/v1/gmail-oauth-start`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Não foi possível iniciar a conexão');window.open(d.authorization_url,'_blank');toast('Abrindo autorização do Gmail...')}catch(e){console.error(e);toast('Não foi possível conectar o Gmail: '+(e.message||'erro'))}}
+async function connectGmail(){try{if(!sb||!session){toast('Faça login antes de conectar o Gmail');return}const fresh=await ensureFreshSession();const r=await fetch(`${CONFIG.url}/functions/v1/gmail-oauth-start`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${fresh.access_token}`}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Não foi possível iniciar a conexão');if(!d.authorization_url)throw new Error('URL de autorização não retornada');window.open(d.authorization_url,'_blank','noopener,noreferrer');toast('Abrindo autorização do Gmail...')}catch(e){console.error(e);toast('Não foi possível conectar o Gmail: '+(e.message||'erro'))}}
 async function loadQuotes(){try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();renderQuotes();toast(d.inserted?`${d.inserted} nova(s) cotação(ões) recebida(s)`:'Gmail consultado. Nenhuma nova cotação encontrada.')}catch(e){console.error(e);toast('Não foi possível atualizar as cotações: '+(e.message||'erro'))}}
 function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Valor total:</b> ${money(q.total_value)}</p><hr><div style="white-space:pre-wrap;line-height:1.5">${esc(q.body_text||'Sem conteúdo registrado.')}</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
 
