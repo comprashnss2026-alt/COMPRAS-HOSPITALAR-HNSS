@@ -642,10 +642,10 @@ function mountExecutivePanel(){
 
 function centerStocksFor(itemId){
   const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(itemId));
-  const farm=rows.find(x=>String(x.cost_center||'').toUpperCase()==='FARMÁCIA');
-  const alm=rows.find(x=>String(x.cost_center||'').toUpperCase()==='ALMOXARIFADO');
-  return {farm:Number(farm?.current_stock||0),alm:Number(alm?.current_stock||0),
-          total:Number(farm?.current_stock||0)+Number(alm?.current_stock||0)};
+  const farm=rows.find(x=>String(x.cost_center||x.sector||'').toUpperCase()==='FARMÁCIA');
+  const alm=rows.find(x=>String(x.cost_center||x.sector||'').toUpperCase()==='ALMOXARIFADO');
+  const farmQty=Number(farm?.current_stock??farm?.quantity??0), almQty=Number(alm?.current_stock??alm?.quantity??0);
+  return {farm:farmQty,alm:almQty,total:farmQty+almQty};
 }
 function detectSaveCostCenter(text){
   const m=String(text||'').match(/Centro Custo\s*-\s*(FARM[ÁA]CIA|ALMOXARIFADO)/i);
@@ -721,7 +721,7 @@ async function previewSaveStockFile(file){
     const preview=rows.map(r=>{
       const i=byCode.get(r.code);
       const c=i?centerStocksFor(i.id):null;
-      const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||'').toUpperCase()===center));
+      const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||sc.sector||'').toUpperCase()===center));
       const old=i?(center==='FARMÁCIA'?c.farm:c.alm):null;
       return {...r,item:i||null,old,diff:i?r.stock-old:null,hasCenterRecord,needsCreate:!!i&&!hasCenterRecord};
     });
@@ -2177,8 +2177,8 @@ function purchaseCenterFor(i){
 function intelStockStatus(i,filter=intelCenterFilter){
   const rows=(cache.stockCenters||[]).filter(sc=>String(sc.item_id)===String(i.id));
   const center=filter==='PRINCIPAL'?purchaseCenterFor(i):filter;
-  const farm=rows.some(sc=>String(sc.cost_center||'').toUpperCase()==='FARMÁCIA');
-  const alm=rows.some(sc=>String(sc.cost_center||'').toUpperCase()==='ALMOXARIFADO');
+  const farm=rows.some(sc=>String(sc.cost_center||sc.sector||'').toUpperCase()==='FARMÁCIA');
+  const alm=rows.some(sc=>String(sc.cost_center||sc.sector||'').toUpperCase()==='ALMOXARIFADO');
   const synced=center==='FARMÁCIA'?farm:center==='ALMOXARIFADO'?alm:(farm||alm);
   return {center,farm,alm,synced};
 }
