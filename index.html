@@ -377,10 +377,20 @@ async function refresh(){
   cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;
   if(sb&&session) await syncSupplierDirectoryToDatabase(false);
 }
+
+async function testSupabaseConnection(){
+  try{
+    const r = await sb.from('profiles').select('id').limit(1);
+    if(r.error) console.warn('Supabase profiles:', r.error.message);
+    else console.log('Supabase conectado OK');
+  }catch(e){ console.warn('Falha Supabase:', e.message); }
+}
+
 async function boot(){
   try{
     if(!(CONFIG.url&&CONFIG.anonKey))throw new Error('Configuração do Supabase ausente.');
     sb=window.supabase.createClient(CONFIG.url,CONFIG.anonKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+    testSupabaseConnection();
     sb.auth.onAuthStateChange((event,s)=>{
       session=s;
       if(event==='SIGNED_OUT'){profile=null;cache={items:[],suppliers:[],purchases:[],requestItems:[],orders:[],quotes:[],consultations:[],audit:[],profiles:[]};showLogin();return}
