@@ -2373,22 +2373,3 @@ function purchaseCanOrder(p){
 </script>
 
 </body></html>
-<script>
-async function diagnosticoEstoqueV2(){
-  console.log("=== DIAGNOSTICO ESTOQUE HNSS ===");
-  const tabelas=["items","item_stock_centers","stock_movements"];
-  for(const tabela of tabelas){
-    try{
-      const r=await sb.from(tabela).select("*",{count:"exact",head:false}).limit(3);
-      if(r.error){
-        console.warn(tabela,"ERRO:",r.error.message);
-      }else{
-        console.log(tabela,"REGISTROS:",r.count,"AMOSTRA:",r.data);
-      }
-    }catch(e){
-      console.warn(tabela,"FALHA:",e.message);
-    }
-  }
-}
-setTimeout(diagnosticoEstoqueV2,2000);
-</script>
