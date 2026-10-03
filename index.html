@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HNSS 6.0.1 — Arquitetura Hospital Enterprise Corrigida</title>
+<title>HNSS 6.0.1 TESTE — Evolução Arquitetural</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -30,6 +30,7 @@
 .abc-note{padding:12px 14px;background:#f7f9fc;border:1px solid #e4e9f1;border-radius:12px;color:#596579;font-size:12px;margin-bottom:16px}
 @media(max-width:1000px){.abc-grid{grid-template-columns:repeat(2,1fr)}.abc-layout{grid-template-columns:1fr}}
 @media(max-width:600px){.abc-grid{grid-template-columns:1fr}}
+.abc-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:10px 0 16px}.abc-filters .field{min-width:170px;margin:0}.abc-search{min-width:260px}.abc-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 16px}.abc-summary>div{border:1px solid #e4e9f1;border-radius:12px;padding:12px;background:#fff}.abc-summary strong{display:block;font-size:18px;margin-bottom:3px}.abc-summary span{font-size:12px;color:#667085}.abc-empty{padding:28px;text-align:center;color:#667085}@media(max-width:700px){.abc-summary{grid-template-columns:1fr}.abc-search{min-width:100%}}
 textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #d6dce5;border-radius:9px;resize:vertical;font:inherit}.ai-answer{line-height:1.65;font-size:14px;color:#25324a;white-space:normal}
 .supplier-search-result{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fbff;margin-top:10px}.supplier-search-name{font-weight:800;font-size:16px;margin-bottom:5px}.supplier-search-meta{display:flex;flex-direction:column;gap:3px;color:#475569;font-size:13px}.supplier-search-meta span{color:#64748b}@media(max-width:760px){.supplier-search-result{flex-direction:column;align-items:stretch}.supplier-search-result .primary{width:100%;text-align:center}}
 
@@ -102,42 +103,144 @@ nav a,.nav-item,.menu-item{border-radius:10px!important;margin:3px 6px!important
 .supplier-note{font-size:11px;color:#697386;margin-top:10px;line-height:1.45}
 @media(max-width:850px){.supplier-search-box{grid-template-columns:1fr}.supplier-base-grid{grid-template-columns:1fr}.catalog-result{align-items:flex-start;flex-direction:column}}
 </style>
+
+<script>
+window.HNSS_ARCHITECTURE = {
+ version: "6.0.1",
+ environment: "TESTE",
+ modules: [
+  "dashboard",
+  "estoque",
+  "compras",
+  "fornecedores",
+  "recebimento",
+  "ia"
+ ],
+ migrationSafe: true
+};
+</script>
+
+
+<style id="hnss-menu-fix-6-0-2">
+.sidebar{
+  width:270px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-bottom:90px!important;
+}
+.main{
+  margin-left:270px!important;
+}
+.nav button{
+  font-size:15px!important;
+  line-height:1.25!important;
+  white-space:normal!important;
+  min-height:44px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+}
+@media(max-width:900px){
+ .sidebar{
+   width:auto!important;
+   overflow:auto!important;
+ }
+ .main{
+   margin-left:0!important;
+ }
+}
+</style>
+
+
+<style id="hnss-603-core">
+.hnss603-tag{
+ position:fixed;
+ top:12px;
+ right:12px;
+ z-index:99999;
+ background:#10233f;
+ color:#fff;
+ padding:8px 12px;
+ border-radius:10px;
+ font-size:12px;
+ box-shadow:0 6px 18px #0003;
+}
+</style>
+
+<style id="hnss-61-motor">
+.hnss61-panel{
+ margin-top:16px;
+ padding:16px;
+ border:1px solid #e4e9f1;
+ border-radius:14px;
+ background:#fff;
+}
+.hnss61-title{
+ font-weight:800;
+ margin-bottom:8px;
+}
+.hnss61-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:12px;
+}
+@media(max-width:900px){
+ .hnss61-grid{grid-template-columns:1fr}
+}
+</style>
+
+
+<style id="hnss-611-motor-estoque">
+.hnss611-panel{
+  margin-top:16px;
+  padding:18px;
+  border:1px solid #e4e9f1;
+  border-radius:14px;
+  background:#fff;
+}
+.hnss611-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.hnss611-card{
+  padding:14px;
+  border:1px solid #edf0f4;
+  border-radius:12px;
+  background:#fafcff;
+}
+@media(max-width:900px){
+  .hnss611-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:550px){
+  .hnss611-grid{grid-template-columns:1fr}
+}
+</style>
+
+
+<style id="hnss-6127-executive-fix">
+.ai-executive{padding:20px!important;margin-top:18px!important}.ai-executive-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}.ai-executive-head h3{margin:2px 0 5px;font-size:18px}.ai-executive-head .sub{font-size:12px;color:#697386}.ai-executive-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.ai-executive-kpi{border:1px solid #e6ebf2;background:#f8fafc;border-radius:13px;padding:15px}.ai-executive-kpi .label{font-size:10px;font-weight:850;letter-spacing:.06em;color:#697386}.ai-executive-kpi .value{font-size:27px;font-weight:850;line-height:1.1;margin:7px 0 4px}.ai-executive-kpi .meta{font-size:11px;color:#697386;line-height:1.35}.ai-executive-result{margin-top:14px;padding:14px;border:1px solid #e6ebf2;background:#fbfcfe;border-radius:12px;min-height:50px}.ai-executive .crit-card{background:#fff5f5;border-color:#f1caca}.ai-executive .abc-card{background:#fff9ed;border-color:#f1dfb8}@media(max-width:900px){.ai-executive-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.ai-executive-head{flex-direction:column}.ai-executive-grid{grid-template-columns:1fr}}
+</style>
 </head>
-<!-- HNSS 5.9.7 audit patch: stability layer, diagnostics and safer runtime handling -->
-<body data-hnss-version="6.0.1" data-environment="production">
+
+    <div id="hnss60Banner" style="position:fixed;bottom:12px;left:12px;z-index:99999;background:#10233f;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 8px 20px #0003">
+      HNSS 6.1.32 TESTE | Fluxo de Compras Auditado | Banco preservado
+    </div>
+    
+
+<div class="hnss603-tag">
+HNSS 6.1.32 TESTE | Fluxo de Compras Auditado
+</div>
+<body data-hnss-version="6.1.26-TESTE" data-environment="production">
 <div id="login" class="login"><div class="card login-card"><div class="brand">🏥 Compras Hospitalares</div><div class="muted">Sistema online de estoque e compras</div><form id="loginForm"><div class="field"><label>E-mail</label><input id="email" type="email" required autocomplete="email"></div><div class="field"><label>Senha</label><input id="password" type="password" required autocomplete="current-password"></div><button class="primary" style="width:100%">Entrar</button></form><div style="text-align:center;margin:14px 0;color:#697386;font-size:12px">OU</div><button id="googleLogin" type="button" class="secondary" style="width:100%">Continuar com Google</button><p id="loginMsg" class="muted" style="font-size:13px;margin-top:14px"></p></div></div>
 <div id="app" class="app hidden"><aside class="sidebar"><div class="brand">🏥 Compras Hospitalares</div><div class="nav"><button data-page="dashboard" class="active">📊 Dashboard</button><button data-page="estoque">📦 Estoque</button><button data-page="inteligencia">🧠 Inteligência de Compras</button><button data-page="preditivo">🔮 Planejamento Preditivo</button><button data-page="abc">📈 Curva ABC &amp; Consumo</button><button data-page="ia">🤖 IA de Gestão</button><button data-page="compras">🛒 Compras</button><button data-page="fornecedores">🏢 Fornecedores</button><button data-page="produtos">📦 Produtos e Preços</button><button data-page="recebimento">📥 Recebimento / NF</button></div><button id="logout" class="secondary logout-side" type="button" style="margin:18px 10px;width:calc(100% - 20px)">Sair da conta</button></aside>
 <main class="main"><div class="top"><div><h1 id="pageTitle">Dashboard</h1><div id="userInfo" class="muted"></div></div><div style="display:flex;gap:8px;align-items:center"><button id="newBtn" class="primary">+ Novo</button><button id="logoutTop" class="secondary logout-top" type="button">Sair</button></div></div><section id="page-dashboard"></section><section id="page-estoque" class="hidden"></section><section id="page-inteligencia" class="hidden"></section><section id="page-preditivo" class="hidden"></section><section id="page-abc" class="hidden"></section><section id="page-ia" class="hidden"></section><section id="page-compras" class="hidden"></section><section id="page-fornecedores" class="hidden"></section><section id="page-produtos" class="hidden"></section><section id="page-recebimento" class="hidden"></section></main></div>
 <div id="modal" class="modal hidden"><div class="card modal-box"><div id="modalBody"></div></div></div><div id="toast" class="toast"></div>
 <script>
-const CONFIG={url:'https://hdvahhymnrdsjrwzoroy.supabase.co',anonKey:'sb_publishable_cqbn65PyIJX-x0WTZA8N7g_nPProGPA'}; let sb=null,session=null,profile=null; let purchaseSaveBusy=false,receivingSaveBusy=false; let cache={items:[],suppliers:[],purchases:[],requestItems:[],orders:[],quotes:[],consultations:[],audit:[],profiles:[]};
+const CONFIG={url:'https://psujwepgzdtjsnssgkmc.supabase.co',anonKey:'sb_publishable_QK_6oXaUtGwRpm1nocSDXg_9WjjE7H2'}; let sb=null,session=null,profile=null; let purchaseSaveBusy=false,receivingSaveBusy=false; let cache={items:[],suppliers:[],purchases:[],requestItems:[],orders:[],quotes:[],consultations:[],audit:[],profiles:[],approvals:[]};
 let sessionRefreshPromise=null;
 const $=id=>document.getElementById(id); const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(t){$('toast').textContent=t;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2500)}
-
-/* HNSS 5.9.7 - Camada de estabilidade adicionada pela auditoria
-   Objetivos:
-   - evitar falhas silenciosas de JavaScript
-   - registrar erros críticos para diagnóstico
-   - proteger operações assíncronas de interface
-*/
-window.addEventListener('error', e=>{
-  console.error('[HNSS] Erro global:', e.error || e.message);
-});
-window.addEventListener('unhandledrejection', e=>{
-  console.error('[HNSS] Promise rejeitada:', e.reason);
-});
-
-function hnssSafe(fn){
-  return async (...args)=>{
-    try{return await fn(...args)}
-    catch(e){
-      console.error('[HNSS] Operação protegida falhou:',e);
-      toast(e?.message || 'Erro inesperado no sistema');
-    }
-  };
-}
-
 function status(i){let av=Number(i.current_stock||0)-Number(i.reserved_qty||0)+Number(i.on_order_qty||0), min=Number(i.min_stock||0), pp=Number(i.reorder_point||min); if(av<=0)return ['Crítico','crit']; if(av<=min)return ['Abaixo do mínimo','crit']; if(av<=pp)return ['Ponto de pedido','warn']; return ['Adequado','ok']}
 async function ensureFreshSession(force=false){
   if(!sb)throw new Error('Supabase não inicializado');
@@ -268,9 +371,10 @@ async function syncSupplierDirectoryNow(){
 
 async function refresh(){
   cache.items=await loadItemsReliable();
-  const jobs=[['suppliers','suppliers',{order:'name'}],['purchases','purchase_requests',{order:'created_at'}],['requestItems','purchase_request_items',{order:'id'}],['quotes','purchase_quotes',{order:'received_at'}],['consultations','purchase_supplier_consultations',{order:'created_at'}],['audit','purchase_audit_log',{order:'changed_at'}],['profiles','profiles',{order:'name'}],['receipts','purchase_receipts',{order:'received_at'}],['receiptItems','purchase_receipt_items',{order:'id'}],['stockMovements','stock_movements',{order:'created_at',limit:30}]];
+  const jobs=[['suppliers','suppliers',{order:'name'}],['purchases','purchase_requests',{order:'created_at'}],['requestItems','purchase_request_items',{order:'id'}],['quotes','purchase_quotes',{order:'received_at'}],['consultations','purchase_supplier_consultations',{order:'created_at'}],['audit','purchase_audit_log',{order:'changed_at'}],['profiles','profiles',{order:'name'}],['approvals','purchase_approvals',{order:'approved_at'}],['receipts','purchase_receipts',{order:'received_at'}],['receiptItems','purchase_receipt_items',{order:'id'}],['stockMovements','stock_movements',{order:'created_at',limit:30}]];
   await Promise.all(jobs.map(async([key,table,opts])=>{try{cache[key]=await query(table,opts)}catch(e){console.warn('Falha ao carregar '+table,e);cache[key]=cache[key]||[]}}));
-  cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;cache._lastRefreshAt=Date.now();
+  try{cache.stockCenters=await query('item_stock_centers',{order:'id'})}catch(e){console.warn('Falha ao carregar estoques por centro',e);cache.stockCenters=cache.stockCenters||[]}
+  cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;
   if(sb&&session) await syncSupplierDirectoryToDatabase(false);
 }
 async function boot(){
@@ -339,43 +443,70 @@ async function retryInitialLoad(){
 function showLogin(){$('login').classList.remove('hidden');$('app').classList.add('hidden')} function showApp(){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userInfo').textContent=session?.user?.email||'Usuário autenticado';renderDashboard();mountExecutivePanel()}
 $('loginForm').onsubmit=async e=>{e.preventDefault();if(!sb){$('loginMsg').textContent='Sistema indisponível. Tente novamente em instantes.';return}let {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)$('loginMsg').textContent=error.message};$('googleLogin').onclick=async()=>{if(!sb){$('loginMsg').textContent='Sistema indisponível. Tente novamente em instantes.';return}$('loginMsg').textContent='Redirecionando para o Google...';const redirectTo=window.location.origin+window.location.pathname;const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo}});if(error)$('loginMsg').textContent='Google indisponível: '+error.message};async function logout(){if(!sb){showLogin();return}const r=await sb.auth.signOut();if(r.error){console.error(r.error);toast('Não foi possível encerrar a sessão. Tente novamente.');return}profile=null;session=null;showLogin();$('email').value='';$('password').value='';$('loginMsg').textContent='Sessão encerrada com segurança.'} $('logout').onclick=logout;$('logoutTop').onclick=logout;
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.page));
-function abcRows(mode='consumo'){
+function abcStockFor(i,center='PRINCIPAL'){
+  const s=centerStocksFor(i.id);
+  if(center==='FARMÁCIA')return s.farm;
+  if(center==='ALMOXARIFADO')return s.alm;
+  if(center==='TOTAL')return s.total;
+  const pref=String(i.purchase_stock_center||'').toUpperCase();
+  return pref==='ALMOXARIFADO'?s.alm:pref==='TOTAL'?s.total:s.farm;
+}
+function abcRows(mode='valor_consumo',center='PRINCIPAL'){
   const items=cache.items||[];
   const rows=items.map(i=>{
     const price=Math.max(0,Number(i.last_unit_price||0));
-    const c30=Math.max(0,Number(i.consumption_30d||0));
-    const c90=Math.max(0,Number(i.consumption_90d||0));
-    const stock=Math.max(0,Number(i.current_stock||0));
-    const base=mode==='estoque'?stock*price:(c90>0?c90*price:c30*3*price);
-    return {...i,price,c30,c90,stock,abcValue:base};
+    const factor=Math.max(0,Number(i.consumption_units_per_stock_unit||0));
+    const verified=!!i.consumption_conversion_verified_at;
+    const raw30=Math.max(0,Number(i.consumption_30d||0));
+    const raw90=Math.max(0,Number(i.consumption_90d||0));
+    const c30=(factor>0&&verified)?raw30/factor:0;
+    const c90=(factor>0&&verified)?raw90/factor:0;
+    const stock=Math.max(0,abcStockFor(i,center));
+    let base=0;
+    if(mode==='quantidade')base=c90>0?c90:c30*3;
+    else if(mode==='estoque')base=stock*price;
+    else base=(c90>0?c90:c30*3)*price;
+    return {...i,price,c30,c90,stock,abcValue:base,missingPrice:price<=0};
   }).filter(x=>x.abcValue>0).sort((a,b)=>b.abcValue-a.abcValue);
-  const total=rows.reduce((a,x)=>a+x.abcValue,0);
-  let cum=0;
-  return rows.map(x=>{
-    cum+=x.abcValue;
-    const pct=total?cum/total*100:0;
-    const cls=pct<=80?'A':pct<=95?'B':'C';
-    return {...x,cumPct:pct,abc:cls};
-  });
+  const total=rows.reduce((a,x)=>a+x.abcValue,0);let cum=0;
+  return rows.map(x=>{cum+=x.abcValue;const pct=total?cum/total*100:0;return {...x,cumPct:pct,abc:pct<=80?'A':pct<=95?'B':'C'};});
 }
+function abcFilteredRows(){
+  const sec=$('page-abc'),mode=sec.dataset.mode||'valor_consumo',center=sec.dataset.center||'PRINCIPAL';
+  const cls=sec.dataset.cls||'TODAS',q=(sec.dataset.q||'').trim().toLowerCase();
+  return abcRows(mode,center).filter(x=>(cls==='TODAS'||x.abc===cls)&&(!q||String(x.code||'').toLowerCase().includes(q)||String(x.name||'').toLowerCase().includes(q)));
+}
+function abcCsv(){
+  const sec=$('page-abc'),mode=sec.dataset.mode||'valor_consumo',center=sec.dataset.center||'PRINCIPAL',rows=abcFilteredRows();
+  const head=['ABC','Código','Produto','Centro','Consumo 30d','Consumo 90d','Estoque','Preço','Valor analisado','% acumulado'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const data=[head,...rows.map(x=>[x.abc,x.code,x.name,center,x.c30.toFixed(4),x.c90.toFixed(4),x.stock.toFixed(4),x.price.toFixed(4),x.abcValue.toFixed(4),x.cumPct.toFixed(2)])].map(r=>r.map(q).join(';')).join('\n');
+  const blob=new Blob(['\ufeff'+data],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`HNSS_CURVA_ABC_${mode}_${center}_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+function printABC(){window.print()}
 function renderABC(){
   const sec=$('page-abc');
-  const mode=sec.dataset.mode||'consumo';
-  const rows=abcRows(mode);
-  const total=rows.reduce((a,x)=>a+x.abcValue,0);
-  const a=rows.filter(x=>x.abc==='A'), b=rows.filter(x=>x.abc==='B'), c=rows.filter(x=>x.abc==='C');
-  const top=rows.slice(0,24);
-  const max=Math.max(...top.map(x=>x.abcValue),1);
-  const title=mode==='estoque'?'ABC de valor em estoque':'ABC de consumo';
-  const subtitle=mode==='estoque'?'Classificação pelo valor financeiro do estoque atual.':'Classificação pelo valor consumido em 90 dias; quando não houver 90 dias, usa 30 dias anualizado.';
-  const html=`<div class="abc-note"><strong>${title}</strong> · ${subtitle} Limites operacionais: Classe A até 80% do valor acumulado, B até 95% e C acima de 95%. Esta análise é gerencial e não altera estoque, produtos ou banco.</div>
-  <div class="abc-toolbar"><div class="field"><label>Base da análise</label><select id="abcMode"><option value="consumo" ${mode==='consumo'?'selected':''}>Consumo</option><option value="estoque" ${mode==='estoque'?'selected':''}>Valor em estoque</option></select></div><button class="secondary" onclick="renderABC()">🔄 Recalcular</button></div>
-  <div class="abc-grid"><div class="abc-kpi"><div class="muted">Itens analisados</div><div class="v">${rows.length}</div></div><div class="abc-kpi"><div class="muted">Classe A</div><div class="v">${a.length}</div><div class="muted">${a.length&&rows.length?(a.length/rows.length*100).toFixed(1):0}% dos itens</div></div><div class="abc-kpi"><div class="muted">Classe B</div><div class="v">${b.length}</div><div class="muted">${b.length&&rows.length?(b.length/rows.length*100).toFixed(1):0}% dos itens</div></div><div class="abc-kpi"><div class="muted">Valor analisado</div><div class="v" style="font-size:20px">${money(total)}</div></div></div>
-  <div class="abc-layout"><div class="abc-chart"><h3 style="margin:0 0 5px">Concentração de valor — principais itens</h3><div class="muted">Os 24 maiores itens por valor ${mode==='estoque'?'em estoque':'de consumo'}.</div><div class="abc-bars">${top.map((x,i)=>`<div class="abc-bar" style="height:${Math.max(8,x.abcValue/max*155)}px" title="${esc(x.name)} — ${money(x.abcValue)}"><span>${x.abc}</span></div>`).join('')}</div><div class="abc-legend"><span><b>A</b> · até 80%</span><span><b>B</b> · 80–95%</span><span><b>C</b> · &gt;95%</span></div></div>
-  <div class="abc-chart"><h3 style="margin:0 0 10px">Leitura para compras hospitalares</h3><p class="muted"><strong>A:</strong> maior impacto financeiro — acompanhar de perto, negociar e revisar cobertura.</p><p class="muted"><strong>B:</strong> impacto intermediário — revisão periódica e reposição planejada.</p><p class="muted"><strong>C:</strong> menor impacto individual — simplificar controle sem perder segurança assistencial.</p><p class="muted" style="margin-bottom:0"><strong>Importante:</strong> ABC financeiro não substitui criticidade clínica. Um item barato pode ser essencial ao atendimento.</p></div></div>
-  <div class="abc-table"><table><thead><tr><th>ABC</th><th>Produto</th><th>Código</th><th>Consumo 30d</th><th>Consumo 90d</th><th>Estoque</th><th>Preço</th><th>Valor analisado</th><th>% acumulado</th></tr></thead><tbody>${rows.slice(0,180).map(x=>`<tr><td><span class="abc-pill abc-${x.abc}">${x.abc}</span></td><td><strong>${esc(x.name)}</strong></td><td>${esc(x.code||'')}</td><td>${Number(x.c30).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${Number(x.c90).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${money(x.price)}</td><td>${money(x.abcValue)}</td><td>${x.cumPct.toFixed(2)}%</td></tr>`).join('')}</tbody></table></div>`;
-  sec.innerHTML=html;
+  const mode=sec.dataset.mode||'valor_consumo',center=sec.dataset.center||'PRINCIPAL',cls=sec.dataset.cls||'TODAS',query=sec.dataset.q||'';
+  const all=abcRows(mode,center),rows=all.filter(x=>(cls==='TODAS'||x.abc===cls)&&(!query||String(x.code||'').toLowerCase().includes(query.toLowerCase())||String(x.name||'').toLowerCase().includes(query.toLowerCase())));
+  const total=all.reduce((a,x)=>a+x.abcValue,0),shown=rows.reduce((a,x)=>a+x.abcValue,0);
+  const a=all.filter(x=>x.abc==='A'),b=all.filter(x=>x.abc==='B'),c=all.filter(x=>x.abc==='C');
+  const top=all.slice(0,24),max=Math.max(...top.map(x=>x.abcValue),1);
+  const missing=(cache.items||[]).filter(i=>Number(i.last_unit_price||0)<=0 && (Number(i.consumption_90d||0)>0||abcStockFor(i,center)>0)).length;
+  const titles={valor_consumo:'ABC por valor de consumo',quantidade:'ABC por quantidade consumida',estoque:'ABC por valor do estoque'};
+  const subtitles={valor_consumo:'Consumo convertido para unidade de estoque × último custo unitário.',quantidade:'Quantidade consumida convertida para a unidade de estoque, sem influência do preço.',estoque:'Saldo do centro selecionado × último custo unitário.'};
+  const fmt=v=>mode==='quantidade'?Number(v).toLocaleString('pt-BR',{maximumFractionDigits:2}):money(v);
+  sec.innerHTML=`<div class="abc-note"><strong>${titles[mode]}</strong> · ${subtitles[mode]} Classes: A até 80% acumulado, B até 95% e C acima de 95%. Produtos sem preço válido ficam fora das análises financeiras.</div>
+  <div class="abc-toolbar"><div class="field"><label>Tipo de relatório</label><select id="abcMode"><option value="valor_consumo" ${mode==='valor_consumo'?'selected':''}>ABC por valor de consumo</option><option value="quantidade" ${mode==='quantidade'?'selected':''}>ABC por quantidade consumida</option><option value="estoque" ${mode==='estoque'?'selected':''}>ABC por valor do estoque</option></select></div><div class="field"><label>Centro</label><select id="abcCenter"><option value="PRINCIPAL" ${center==='PRINCIPAL'?'selected':''}>Centro principal do produto</option><option value="FARMÁCIA" ${center==='FARMÁCIA'?'selected':''}>Farmácia</option><option value="ALMOXARIFADO" ${center==='ALMOXARIFADO'?'selected':''}>Almoxarifado</option><option value="TOTAL" ${center==='TOTAL'?'selected':''}>Total</option></select></div><button class="secondary" onclick="renderABC()">🔄 Recalcular</button><button class="secondary" onclick="printABC()">🖨️ Imprimir / PDF</button><button class="secondary" onclick="abcCsv()">⬇️ Exportar filtrado</button></div>
+  <div class="abc-grid"><div class="abc-kpi"><div class="muted">Itens analisados</div><div class="v">${all.length}</div></div><div class="abc-kpi"><div class="muted">Classe A</div><div class="v">${a.length}</div><div class="muted">${all.length?(a.length/all.length*100).toFixed(1):0}% dos itens</div></div><div class="abc-kpi"><div class="muted">Classe B / C</div><div class="v">${b.length} / ${c.length}</div></div><div class="abc-kpi"><div class="muted">${mode==='quantidade'?'Quantidade analisada':'Valor analisado'}</div><div class="v" style="font-size:20px">${fmt(total)}</div></div></div>
+  <div class="abc-summary"><div><strong>${a.length}</strong><span>Itens A concentram aproximadamente 80% do movimento analisado.</span></div><div><strong>${b.length}</strong><span>Itens B completam a faixa acumulada até 95%.</span></div><div><strong>${c.length}</strong><span>Itens C representam a parcela restante do movimento.</span></div></div>
+  ${(mode!=='quantidade'&&missing)?`<div class="abc-note">⚠️ <strong>${missing} produto(s)</strong> com movimentação/estoque estão sem preço válido e não entram nesta ABC financeira.</div>`:''}
+  <div class="abc-filters"><div class="field"><label>Classe</label><select id="abcClass"><option value="TODAS" ${cls==='TODAS'?'selected':''}>Todas</option><option value="A" ${cls==='A'?'selected':''}>Somente A</option><option value="B" ${cls==='B'?'selected':''}>Somente B</option><option value="C" ${cls==='C'?'selected':''}>Somente C</option></select></div><div class="field abc-search"><label>Pesquisar produto/código</label><input id="abcSearch" value="${esc(query)}" placeholder="Digite nome ou código"></div><div class="abc-note" style="margin:0;padding:10px 12px"><strong>${rows.length}</strong> exibidos · ${fmt(shown)}</div></div>
+  <div class="abc-layout"><div class="abc-chart"><h3 style="margin:0 0 5px">Concentração — principais itens</h3><div class="muted">24 maiores itens da análise selecionada.</div><div class="abc-bars">${top.map(x=>`<div class="abc-bar" style="height:${Math.max(8,x.abcValue/max*155)}px" title="${esc(x.name)}"><span>${x.abc}</span></div>`).join('')}</div><div class="abc-legend"><span><b>A</b> · até 80%</span><span><b>B</b> · 80–95%</span><span><b>C</b> · &gt;95%</span></div></div><div class="abc-chart"><h3 style="margin:0 0 10px">Leitura gerencial</h3><p class="muted"><strong>Centro:</strong> ${esc(center)}</p><p class="muted"><strong>Classe A:</strong> exige acompanhamento mais frequente pelo impacto no movimento/valor.</p><p class="muted"><strong>Classe B:</strong> acompanhamento intermediário.</p><p class="muted"><strong>Classe C:</strong> menor participação na métrica selecionada.</p><p class="muted" style="margin-bottom:0"><strong>Importante:</strong> ABC mede relevância econômica/quantitativa; não determina criticidade clínica.</p></div></div>
+  <div class="abc-table"><table><thead><tr><th>ABC</th><th>Produto</th><th>Código</th><th>Consumo 30d*</th><th>Consumo 90d*</th><th>Estoque</th><th>Preço</th><th>${mode==='quantidade'?'Qtd. analisada':'Valor analisado'}</th><th>% acumulado</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><span class="abc-pill abc-${x.abc}">${x.abc}</span></td><td><strong>${esc(x.name)}</strong></td><td>${esc(x.code||'')}</td><td>${Number(x.c30).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${Number(x.c90).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${money(x.price)}</td><td>${mode==='quantidade'?Number(x.abcValue).toLocaleString('pt-BR',{maximumFractionDigits:2}):money(x.abcValue)}</td><td>${x.cumPct.toFixed(2)}%</td></tr>`).join(''):`<tr><td colspan="9" class="abc-empty">Nenhum item encontrado com os filtros atuais.</td></tr>`}</tbody></table><div class="muted" style="padding:10px">* Consumo convertido para a unidade de estoque conforme as conversões validadas no HNSS.</div></div>`;
   $('abcMode').onchange=e=>{sec.dataset.mode=e.target.value;renderABC()};
+  $('abcCenter').onchange=e=>{sec.dataset.center=e.target.value;renderABC()};
+  $('abcClass').onchange=e=>{sec.dataset.cls=e.target.value;renderABC()};
+  $('abcSearch').oninput=e=>{sec.dataset.q=e.target.value;clearTimeout(window.__abcT);window.__abcT=setTimeout(renderABC,250)};
 }
 async function askAI(){const input=$('aiQuestion');const output=$('aiAnswer');const button=$('aiAsk');const question=(input?.value||'').trim();if(!question){toast('Digite uma pergunta para a IA');return}button.disabled=true;button.textContent='Analisando...';output.innerHTML='<div class="muted">Analisando os dados operacionais do HNSS...</div>';try{const r=await fetch(`${CONFIG.url}/functions/v1/hnss-ai-management`,{method:'POST',headers:{apikey:CONFIG.anonKey,Authorization:`Bearer ${session?.access_token||''}`,'Content-Type':'application/json'},body:JSON.stringify({question})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Não foi possível consultar a IA');const answer=String(data.answer||'Sem resposta');output.innerHTML=`<div class="ai-answer">${esc(answer).replace(/\n/g,'<br>')}</div><div class="muted" style="margin-top:12px;font-size:11px">Análise consultiva · ${data.analyzed_items||0} itens considerados · ${new Date(data.generated_at||Date.now()).toLocaleString('pt-BR')}</div>`}catch(e){output.innerHTML=`<div class="crit" style="padding:12px;border-radius:10px">${esc(e.message||'Falha ao consultar a IA')}</div>`}finally{button.disabled=false;button.textContent='🤖 Analisar com IA'}}
 async function askGeneralAI(){const input=$('generalAIQuestion'),output=$('generalAIAnswer'),button=$('generalAIAsk'),question=(input?.value||'').trim();if(!question){toast('Digite uma pergunta para o assistente');return}if(!session?.access_token){toast('Sessão expirada. Entre novamente.');return}button.disabled=true;button.textContent='Pensando...';output.innerHTML='<div class="muted">Consultando o assistente HNSS...</div>';try{const r=await fetch(`${CONFIG.url}/functions/v1/hnss-ai-assistant`,{method:'POST',headers:{apikey:CONFIG.anonKey,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:question})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Não foi possível consultar o assistente');output.innerHTML=`<div class="ai-answer">${esc(String(data.answer||'Sem resposta')).replace(/\n/g,'<br>')}</div><div class="muted" style="margin-top:12px;font-size:11px">Assistente HNSS · ${esc(String(data.model||'Gemini'))}</div>`}catch(e){output.innerHTML=`<div class="crit" style="padding:12px;border-radius:10px">${esc(e.message||'Falha ao consultar o assistente')}</div>`}finally{button.disabled=false;button.textContent='💬 Perguntar ao assistente'}}
@@ -386,9 +517,9 @@ $('newBtn').onclick=()=>{let p=[...document.querySelectorAll('.nav button')].fin
 
 function openModal(html){$('modalBody').innerHTML=html;$('modal').classList.remove('hidden')}
 function closeModal(){$('modal').classList.add('hidden');$('modalBody').innerHTML=''}
-function itemForm(item={}){openModal(`<h2>${item.id?'Editar':'Novo'} item</h2><div class="form-grid"><div class="field"><label>Código</label><input id="i_code" value="${esc(item.code||'')}"></div><div class="field"><label>Nome do item</label><input id="i_name" value="${esc(item.name||'')}" required></div><div class="field"><label>Unidade</label><input id="i_unit" value="${esc(item.unit||'un')}"></div><div class="field"><label>Estoque atual</label><input id="i_stock" type="number" step="0.01" value="${Number(item.current_stock||0)}"></div><div class="field"><label>Estoque mínimo</label><input id="i_min" type="number" step="0.01" value="${Number(item.min_stock||0)}"></div><div class="field"><label>Estoque máximo</label><input id="i_max" type="number" step="0.01" value="${Number(item.max_stock||0)}"></div><div class="field"><label>Tamanho do lote</label><input id="i_lot" type="number" step="0.01" value="${Number(item.lot_size||1)}"></div><div class="field"><label>Ponto de pedido</label><input id="i_pp" type="number" step="0.01" value="${Number(item.reorder_point||0)}"></div><div class="field"><label>Preço unitário</label><input id="i_price" type="number" step="0.01" value="${Number(item.last_unit_price||0)}"></div><div class="field"><label>Consumo 30 dias</label><input id="i_c30" type="number" step="0.01" value="${Number(item.consumption_30d||0)}"></div><div class="field"><label>Consumo 90 dias</label><input id="i_c90" type="number" step="0.01" value="${Number(item.consumption_90d||0)}"></div></div><div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="saveItem('${item.id||''}')">Salvar item</button></div>`)}
+function itemForm(item={}){openModal(`<h2>${item.id?'Editar':'Novo'} item</h2><div class="form-grid"><div class="field"><label>Código</label><input id="i_code" value="${esc(item.code||'')}"></div><div class="field"><label>Nome do item</label><input id="i_name" value="${esc(item.name||'')}" required></div><div class="field"><label>Unidade</label><input id="i_unit" value="${esc(item.unit||'un')}"></div><div class="field"><label>Estoque atual</label><input id="i_stock" type="number" step="0.01" value="${Number(item.current_stock||0)}"></div><div class="field"><label>Estoque mínimo</label><input id="i_min" type="number" step="0.01" value="${Number(item.min_stock||0)}"></div><div class="field"><label>Estoque máximo</label><input id="i_max" type="number" step="0.01" value="${Number(item.max_stock||0)}"></div><div class="field"><label>Tamanho do lote</label><input id="i_lot" type="number" step="0.01" value="${Number(item.lot_size||1)}"></div><div class="field"><label>Ponto de pedido</label><input id="i_pp" type="number" step="0.01" value="${Number(item.reorder_point||0)}"></div><div class="field"><label>Preço unitário</label><input id="i_price" type="number" step="0.01" value="${Number(item.last_unit_price||0)}"></div><div class="field"><label>Centro principal para compras</label><select id="i_purchase_center"><option value="FARMÁCIA" ${item.purchase_stock_center==='FARMÁCIA'?'selected':''}>Farmácia</option><option value="ALMOXARIFADO" ${item.purchase_stock_center==='ALMOXARIFADO'?'selected':''}>Almoxarifado</option><option value="TOTAL" ${!item.purchase_stock_center||item.purchase_stock_center==='TOTAL'?'selected':''}>Total consolidado</option></select></div><div class="field"><label>Consumo 30 dias</label><input id="i_c30" type="number" step="0.01" value="${Number(item.consumption_30d||0)}"></div><div class="field"><label>Consumo 90 dias</label><input id="i_c90" type="number" step="0.01" value="${Number(item.consumption_90d||0)}"></div><div class="field"><label>Unidade do consumo SAVE</label><input value="${esc(item.consumption_unit||'Não importada')}" disabled></div><div class="field"><label>Unidades de consumo por 1 unidade de estoque</label><input id="i_cons_factor" type="number" min="0.0001" step="0.0001" value="${item.consumption_units_per_stock_unit??''}" placeholder="Ex.: 400 gotas por frasco"><small class="muted">Informe a equivalência TOTAL da embalagem. Ex.: 20 gotas/mL × frasco 20 mL = 400. Não presuma gotas/mL.</small></div><div class="field"><label>Fonte / observação da conversão</label><input id="i_cons_note" value="${esc(item.consumption_conversion_note||'')}" placeholder="Ex.: bula/fabricante: 20 gotas/mL × 20 mL"></div></div><div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="saveItem('${item.id||''}')">Salvar item</button></div>`)}
 function editItem(id){let i=cache.items.find(x=>String(x.id)===String(id));if(i)itemForm(i)}
-async function saveItem(id=''){let name=($('i_name')?.value||'').trim();if(!name){toast('Informe o nome do item');return}let o={code:($('i_code')?.value||'').trim(),name,unit:($('i_unit')?.value||'un').trim(),current_stock:Number($('i_stock')?.value||0),min_stock:Number($('i_min')?.value||0),max_stock:Number($('i_max')?.value||0),lot_size:Number($('i_lot')?.value||1),reorder_point:Number($('i_pp')?.value||0),last_unit_price:Number($('i_price')?.value||0),consumption_30d:Number($('i_c30')?.value||0),consumption_90d:Number($('i_c90')?.value||0)};try{if(sb){let r=id?await sb.from('items').update(o).eq('id',id).select().single():await sb.from('items').insert(o).select().single();if(r.error)throw r.error;const saved=r.data;if(id){const i=cache.items.find(x=>String(x.id)===String(id));if(i)Object.assign(i,saved||o)}else if(saved)cache.items.push(saved)}else{if(id){let i=cache.items.find(x=>String(x.id)===String(id));if(i)Object.assign(i,o)}else cache.items.push({...o,id:Date.now(),safety_stock:0,reserved_qty:0,on_order_qty:0,criticality:null,abc_class:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()})}cache._stockSorted=null;cache._stockSearchIndex=null;closeModal();renderStock();toast(id?'Item atualizado com sucesso':'Item cadastrado com sucesso')}catch(e){console.error(e);toast('Não foi possível salvar o item: '+(e.message||'erro'))}}
+async function saveItem(id=''){let name=($('i_name')?.value||'').trim();if(!name){toast('Informe o nome do item');return}let o={code:($('i_code')?.value||'').trim(),name,unit:($('i_unit')?.value||'un').trim(),current_stock:Number($('i_stock')?.value||0),min_stock:Number($('i_min')?.value||0),max_stock:Number($('i_max')?.value||0),lot_size:Number($('i_lot')?.value||1),reorder_point:Number($('i_pp')?.value||0),last_unit_price:Number($('i_price')?.value||0),consumption_30d:Number($('i_c30')?.value||0),consumption_90d:Number($('i_c90')?.value||0),purchase_stock_center:($('i_purchase_center')?.value||'TOTAL')};try{if(sb){let r=id?await sb.from('items').update(o).eq('id',id).select().single():await sb.from('items').insert(o).select().single();if(r.error)throw r.error;const saved=r.data;if(id){const cf=($('i_cons_factor')?.value||'').trim(),cn=($('i_cons_note')?.value||'').trim();if(cf!==''){const factor=Number(cf);if(!(factor>0))throw new Error('Fator de conversão inválido');const cr=await sb.rpc('set_consumption_conversion',{p_item_id:id,p_factor:factor,p_note:cn||null});if(cr.error)throw cr.error;}const i=cache.items.find(x=>String(x.id)===String(id));if(i)Object.assign(i,saved||o)}else if(saved)cache.items.push(saved)}else{if(id){let i=cache.items.find(x=>String(x.id)===String(id));if(i)Object.assign(i,o)}else cache.items.push({...o,id:Date.now(),safety_stock:0,reserved_qty:0,on_order_qty:0,criticality:null,abc_class:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()})}cache._stockSorted=null;cache._stockSearchIndex=null;closeModal();renderStock();toast(id?'Item atualizado com sucesso':'Item cadastrado com sucesso')}catch(e){console.error(e);toast('Não foi possível salvar o item: '+(e.message||'erro'))}}
 
 function renderDashboard(){
   const items=cache.items||[], purchases=cache.purchases||[], quotes=cache.quotes||[], suppliers=cache.suppliers||[];
@@ -434,7 +565,7 @@ function renderDashboard(){
       <div class="card smart-card"><div class="eyebrow">QUALIDADE DO CADASTRO</div><h3>🏷️ Itens sem preço</h3><div class="smart-value">${items.filter(i=>Number(i.last_unit_price||0)<=0).length}</div><div class="smart-meta">produtos sem último preço registrado</div><div class="smart-actions"><button class="secondary" onclick="go('produtos')">Revisar preços</button></div></div>
       <div class="card smart-card"><div class="eyebrow">COBERTURA</div><h3>📅 Itens com consumo</h3><div class="smart-value">${items.filter(i=>Number(i.consumption_90d||0)>0).length}</div><div class="smart-meta">com histórico de consumo nos últimos 90 dias</div><div class="smart-list">${[...items].filter(i=>Number(i.consumption_90d||0)>0).sort((a,b)=>Number(b.consumption_90d||0)-Number(a.consumption_90d||0)).slice(0,3).map(i=>{const d=Number(i.consumption_90d||0)/90;const cov=d?Number(i.current_stock||0)/d:0;return `<div class="smart-row"><div><strong>${esc(i.name)}</strong><div><span>${cov===0?'Sem cobertura':cov.toFixed(0)+' dias de cobertura'}</span></div></div><span>${Number(i.consumption_90d||0).toFixed(0)}/90d</span></div>`}).join('')||'<div class="smart-row"><span>Sem histórico de consumo.</span></div>'}</div></div>
     </div>
-    <div class="card smart-card" style="margin-top:18px"><div class="section-heading"><div><div class="eyebrow">PRIORIZAÇÃO</div><h3>🎯 Lista de ação recomendada</h3><div class="sub">Itens ordenados por risco operacional e necessidade de reposição.</div></div><button class="dash-link" onclick="go('estoque')">Abrir estoque →</button></div><div class="smart-list">${[...items].filter(i=>{const st=status(i);return st[1]==='crit'||st[0]==='Ponto de pedido'}).sort((a,b)=>{const sa=status(a),sb=status(b);const ra=sa[1]==='crit'?0:1,rb=sb[1]==='crit'?0:1;return ra-rb||Number(a.current_stock||0)-Number(b.current_stock||0)}).slice(0,8).map(i=>{const st=status(i),need=Math.max(0,Number(i.max_stock||0)-Number(i.current_stock||0));return `<div class="smart-row ${st[1]==='crit'?'smart-alert':'smart-warn'}"><div><strong>${esc(i.name)}</strong><div><span>${esc(st[0])} · estoque ${Number(i.current_stock||0)} ${esc(i.unit||'')}</span></div></div><strong>Repor ${need}</strong></div>`}).join('')||'<div class="smart-row smart-ok"><span>Não há itens críticos ou no ponto de pedido.</span></div>'}</div></div>`;
+    <div class="card smart-card" style="margin-top:18px"><div class="section-heading"><div><div class="eyebrow">PRIORIZAÇÃO</div><h3>🎯 Lista de ação recomendada</h3><div class="sub">Itens ordenados por risco operacional e necessidade de reposição.</div></div><button class="dash-link" onclick="go('estoque')">Abrir estoque →</button></div><div class="smart-list">${[...items].filter(i=>{const st=status(i);return st[1]==='crit'||st[0]==='Ponto de pedido'}).sort((a,b)=>{const sa=status(a),sb=status(b);const ra=sa[1]==='crit'?0:1,rb=sb[1]==='crit'?0:1;return ra-rb||Number(a.current_stock||0)-Number(b.current_stock||0)}).slice(0,8).map(i=>{const st=status(i),need=Math.max(0,Number(i.max_stock||0)-Number(i.current_stock||0));return `<div class="smart-row ${st[1]==='crit'?'smart-alert':'smart-warn'}"><div><strong>${esc(i.name)}</strong><div><span>${esc(st[0])} · estoque ${stockForOperational(i)===null?'Não sincronizado':Number(stockForOperational(i))+' '+esc(i.unit||'')}</span></div></div><strong>Repor ${need}</strong></div>`}).join('')||'<div class="smart-row smart-ok"><span>Não há itens críticos ou no ponto de pedido.</span></div>'}</div></div>`;
 }
 
 async function runExecutiveAI(){
@@ -464,12 +595,33 @@ async function runExecutiveAI(){
 function mountExecutivePanel(){
   const host=document.getElementById('page-dashboard');
   if(!host||document.getElementById('executiveAIResult'))return;
+  let rows=[]; try{rows=buildIntelRows()}catch(e){console.warn('Painel inteligente',e)}
+  const urgent=rows.filter(x=>x.priority==='Urgente').length;
+  const high=rows.filter(x=>x.priority==='Alta').length;
+  const abcA=rows.filter(x=>x.abc==='A').length;
+  const lowCoverage=rows.filter(x=>x.days!==null&&x.days<15).length;
+  const openPurch=(cache.purchases||[]).filter(p=>!['recebida','cancelada'].includes(String(p.status||'').toLowerCase())).length;
   const card=document.createElement('div');
   card.className='card smart-card ai-executive';
-  card.style.marginTop='18px';
-  card.innerHTML=`<div class="ai-executive-head"><div><div class="eyebrow">HNSS · INTELIGÊNCIA HOSPITALAR</div><h3>🧠 Painel Inteligente do Gestor</h3><div class="sub">Leitura executiva dos riscos e prioridades atuais. A IA é consultiva e não executa operações.</div></div><button id="executiveAIButton" class="primary" onclick="runExecutiveAI()">🤖 Atualizar análise</button></div><div class="ai-executive-grid"><div class="ai-executive-kpi"><div class="label">RISCO IMEDIATO</div><div class="value">${(cache.items||[]).filter(i=>status(i)[1]==='crit').length}</div><div class="meta">itens em situação crítica</div></div><div class="ai-executive-kpi"><div class="label">REPOSIÇÃO</div><div class="value">${(cache.items||[]).filter(i=>status(i)[0]==='Ponto de pedido').length}</div><div class="meta">itens no ponto de pedido</div></div><div class="ai-executive-kpi"><div class="label">COMPRAS ABERTAS</div><div class="value">${(cache.purchases||[]).filter(p=>!['recebida','cancelada'].includes(String(p.status||'').toLowerCase())).length}</div><div class="meta">requisições não encerradas</div></div><div class="ai-executive-kpi"><div class="label">SEM PREÇO</div><div class="value">${(cache.items||[]).filter(i=>Number(i.last_unit_price||0)<=0).length}</div><div class="meta">itens que merecem revisão</div></div></div><div id="executiveAIResult" class="ai-executive-result"><div class="muted">Clique em “Atualizar análise” para gerar o resumo executivo com IA.</div></div>`;
+  card.innerHTML=`<div class="ai-executive-head"><div><div class="eyebrow">HNSS · INTELIGÊNCIA HOSPITALAR</div><h3>🧠 Painel Inteligente do Gestor</h3><div class="sub">Resumo baseado no mesmo cálculo validado da Inteligência de Compras e no estoque sincronizado do SAVE.</div></div><button id="executiveAIButton" class="primary" onclick="runExecutiveAI()">🤖 Atualizar análise</button></div><div class="ai-executive-grid"><div class="ai-executive-kpi crit-card"><div class="label">COBERTURA &lt; 15 DIAS</div><div class="value">${lowCoverage}</div><div class="meta">itens recomendados com baixa cobertura</div></div><div class="ai-executive-kpi abc-card"><div class="label">CLASSE A PARA REPOSIÇÃO</div><div class="value">${abcA}</div><div class="meta">maior impacto econômico entre as reposições</div></div><div class="ai-executive-kpi"><div class="label">URGENTE / ALTA</div><div class="value">${urgent} / ${high}</div><div class="meta">prioridades do motor de compras</div></div><div class="ai-executive-kpi"><div class="label">COMPRAS ABERTAS</div><div class="value">${openPurch}</div><div class="meta">requisições ainda não encerradas</div></div></div><div id="executiveAIResult" class="ai-executive-result"><div class="muted">Clique em “Atualizar análise” para gerar o resumo executivo com IA.</div></div>`;
   host.appendChild(card);
 }
+
+function centerStocksFor(itemId){
+  const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(itemId));
+  const farm=rows.find(x=>String(x.cost_center||'').toUpperCase()==='FARMÁCIA');
+  const alm=rows.find(x=>String(x.cost_center||'').toUpperCase()==='ALMOXARIFADO');
+  return {farm:Number(farm?.current_stock||0),alm:Number(alm?.current_stock||0),
+          total:Number(farm?.current_stock||0)+Number(alm?.current_stock||0)};
+}
+function detectSaveCostCenter(text){
+  const m=String(text||'').match(/Centro Custo\s*-\s*(FARM[ÁA]CIA|ALMOXARIFADO)/i);
+  if(m)return /ALMOX/i.test(m[1])?'ALMOXARIFADO':'FARMÁCIA';
+  const m2=String(text||'').match(/;\s*"(FARM[ÁA]CIA|ALMOXARIFADO)"\s*;/i);
+  if(m2)return /ALMOX/i.test(m2[1])?'ALMOXARIFADO':'FARMÁCIA';
+  return null;
+}
+
 function renderStock(){
   const all=[...(cache.items||[])];
   if(!cache._stockSorted){
@@ -478,28 +630,89 @@ function renderStock(){
     cache._stockSearchIndex=new Map(cache._stockSorted.map(i=>[String(i.id),normalizeSearch(String(i.code||'')+' '+String(i.name||'')+' '+String(i.unit||''))]));
   }
   const sortedItems=cache._stockSorted;
-  const visibleItems=sortedItems.slice(0,80);let rows=visibleItems.map(i=>{let s=status(i),daily=Number(i.consumption_90d||0)/90,cov=daily?Number(i.current_stock||0)/daily:999,q=Math.max(0,Number(i.max_stock||0)-Number(i.current_stock||0));return `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td><b>${i.current_stock}</b> ${esc(i.unit)}</td><td>${i.min_stock}</td><td>${cov===999?'—':cov.toFixed(0)+' d'}</td><td><span class="badge ${s[1]}">${s[0]}</span></td><td>${q}</td><td><button class="secondary" onclick="editItem('${i.id}')">Editar</button></td></tr>`}).join('');const entries=(cache.stockMovements||[]).filter(m=>String(m.type||'').toLowerCase().includes('entrada')).slice(0,10).map(m=>{const it=cache.items.find(i=>String(i.id)===String(m.item_id));return `<tr><td>${m.created_at?new Date(m.created_at).toLocaleString('pt-BR'):'-'}</td><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${Number(m.quantity||0)} ${esc(it?.unit||'')}</td><td>${money(m.unit_cost||0)}</td><td>${esc(m.reference||'-')}</td></tr>`}).join('');$('page-estoque').innerHTML=`<div class="card panel"><div class="toolbar"><input id="stockSearch" placeholder="Buscar item..." oninput="filterStock()"><span id="stockSearchNote" class="muted" style="font-size:12px;margin-left:6px">Digite para buscar</span><button class="secondary" onclick="exportCSV()">Exportar CSV</button><button class="secondary" onclick="refresh().then(()=>renderStock())">🔄 Atualizar</button></div><h2>📦 Estoque</h2><p class="muted">As entradas de compras aceitas atualizam o estoque e ficam registradas nas movimentações.</p><div class="table-wrap"><table class="table" id="stockTable"><thead><tr><th>Código</th><th>Item</th><th>Estoque</th><th>Mín.</th><th>Cobertura</th><th>Status</th><th>Sugestão</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=8>Nenhum item.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">🧾 Últimas entradas de compras</h3><div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Quantidade</th><th>Custo unitário</th><th>Referência</th></tr></thead><tbody>${entries||'<tr><td colspan=6>Nenhuma entrada registrada.</td></tr>'}</tbody></table></div></div>`;}
+  const visibleItems=sortedItems.slice(0,80);
+  let rows=visibleItems.map(i=>{
+    const c=centerStocksFor(i.id), daily=Number(i.consumption_90d||0)/90, cov=daily?c.total/daily:999;
+    const q=Math.max(0,Number(i.max_stock||0)-c.total);
+    return `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td><b>${c.farm.toLocaleString('pt-BR')}</b></td><td><b>${c.alm.toLocaleString('pt-BR')}</b></td><td><b>${c.total.toLocaleString('pt-BR')}</b> ${esc(i.unit)}</td><td>${i.min_stock}</td><td>${cov===999?'—':cov.toFixed(0)+' d'}</td><td>${q}</td><td><button class="secondary" onclick="editItem('${i.id}')">Editar</button></td></tr>`
+  }).join('');
+  const entries=(cache.stockMovements||[]).filter(m=>String(m.type||'').toLowerCase().includes('entrada')).slice(0,10).map(m=>{const it=cache.items.find(i=>String(i.id)===String(m.item_id));return `<tr><td>${m.created_at?new Date(m.created_at).toLocaleString('pt-BR'):'-'}</td><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${Number(m.quantity||0)} ${esc(it?.unit||'')}</td><td>${money(m.unit_cost||0)}</td><td>${esc(m.reference||'-')}</td></tr>`}).join('');
+  $('page-estoque').innerHTML=`<div class="card panel"><div class="toolbar"><input id="stockSearch" placeholder="Buscar item..." oninput="filterStock()"><span id="stockSearchNote" class="muted" style="font-size:12px;margin-left:6px">Digite para buscar</span><button class="primary" onclick="document.getElementById('saveStockFile').click()">📥 Importar estoque do SAVE</button><input id="saveStockFile" type="file" accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveStockFile(this.files[0]);this.value=''"><button class="secondary" onclick="exportCSV()">Exportar CSV</button><button class="secondary" onclick="refresh().then(()=>renderStock())">🔄 Atualizar</button></div><h2>📦 Estoque por centro de custo</h2><p class="muted">Farmácia e Almoxarifado são mantidos separadamente. O Total disponível é a soma dos dois centros.</p><div class="table-wrap"><table class="table" id="stockTable"><thead><tr><th>Código</th><th>Item</th><th>Farmácia</th><th>Almoxarifado</th><th>Total disponível</th><th>Mín.</th><th>Cobertura</th><th>Sugestão</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=9>Nenhum item.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">🧾 Últimas entradas de compras</h3><div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Quantidade</th><th>Custo unitário</th><th>Referência</th></tr></thead><tbody>${entries||'<tr><td colspan=6>Nenhuma entrada registrada.</td></tr>'}</tbody></table></div></div>`;
+}
 let stockSearchTimer=0;
 function filterStock(){
   clearTimeout(stockSearchTimer);
   stockSearchTimer=setTimeout(()=>{
     const v=normalizeSearch($('stockSearch')?.value||'');
-    const all=cache._stockSorted||cache.items||[];
-    const index=cache._stockSearchIndex||new Map();
+    const all=cache._stockSorted||cache.items||[], index=cache._stockSearchIndex||new Map();
     const matches=v?all.filter(i=>(index.get(String(i.id))||'').includes(v)):all;
-    const limited=matches.slice(0,80);
-    const tbody=document.querySelector('#stockTable tbody');
-    if(!tbody)return;
-    tbody.innerHTML=limited.map(i=>{
-      const s=status(i),daily=Number(i.consumption_90d||0)/90;
-      const cov=daily?Number(i.current_stock||0)/daily:999;
-      const q=Math.max(0,Number(i.max_stock||0)-Number(i.current_stock||0));
-      return `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td><b>${i.current_stock}</b> ${esc(i.unit)}</td><td>${i.min_stock}</td><td>${cov===999?'—':cov.toFixed(0)+' d'}</td><td><span class="badge ${s[1]}">${s[0]}</span></td><td>${q}</td><td><button class="secondary" onclick="editItem('${i.id}')">Editar</button></td></tr>`;
-    }).join('') || '<tr><td colspan="8">Nenhum item encontrado.</td></tr>';
-    const note=document.getElementById('stockSearchNote');
-    if(note) note.textContent=matches.length>80?`Mostrando 80 de ${matches.length} resultados.`:`${matches.length} resultado(s).`;
+    const tbody=document.querySelector('#stockTable tbody'); if(!tbody)return;
+    tbody.innerHTML=matches.slice(0,80).map(i=>{const c=centerStocksFor(i.id),daily=Number(i.consumption_90d||0)/90,cov=daily?c.total/daily:999,q=Math.max(0,Number(i.max_stock||0)-c.total);return `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td><b>${c.farm.toLocaleString('pt-BR')}</b></td><td><b>${c.alm.toLocaleString('pt-BR')}</b></td><td><b>${c.total.toLocaleString('pt-BR')}</b> ${esc(i.unit)}</td><td>${i.min_stock}</td><td>${cov===999?'—':cov.toFixed(0)+' d'}</td><td>${q}</td><td><button class="secondary" onclick="editItem('${i.id}')">Editar</button></td></tr>`}).join('')||'<tr><td colspan="9">Nenhum item encontrado.</td></tr>';
+    const note=document.getElementById('stockSearchNote'); if(note)note.textContent=matches.length>80?`Mostrando 80 de ${matches.length} resultados.`:`${matches.length} resultado(s).`;
   },120);
 }
+
+let pendingSaveStockImport=null;
+function parseBRNumber(v){
+  const t=String(v??'').trim().replace(/\s/g,'');
+  if(!t)return null;
+  const n=Number(t.replace(/\./g,'').replace(',','.'));
+  return Number.isFinite(n)?n:null;
+}
+function parseSeparatedLine(line){
+  const out=[];let cur='',quoted=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){
+      if(quoted&&line[i+1]==='"'){cur+='"';i++;}else quoted=!quoted;
+    }else if(ch===';'&&!quoted){out.push(cur);cur='';}else cur+=ch;
+  }
+  out.push(cur);return out;
+}
+async function previewSaveStockFile(file){
+  if(!file)return;
+  try{
+    const buf=await file.arrayBuffer(); let text;
+    try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
+    const center=detectSaveCostCenter(text);
+    if(!center){toast('Não consegui identificar FARMÁCIA ou ALMOXARIFADO no arquivo do SAVE.');return}
+    const rows=[];
+    for(const line of text.split(/\r?\n/)){
+      if(!line.trim())continue; const c=parseSeparatedLine(line);
+      const code=String(c[11]||'').trim(), stock=parseBRNumber(c[14]), cost=parseBRNumber(c[16]);
+      if(!/^\d+$/.test(code)||stock===null)continue;
+      rows.push({code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock,cost});
+    }
+    if(!rows.length){toast('Não encontrei produtos no arquivo do SAVE.');return}
+    const byCode=new Map((cache.items||[]).map(i=>[String(i.code||'').trim(),i]));
+    const preview=rows.map(r=>{
+      const i=byCode.get(r.code);
+      const c=i?centerStocksFor(i.id):null;
+      const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||'').toUpperCase()===center));
+      const old=i?(center==='FARMÁCIA'?c.farm:c.alm):null;
+      return {...r,item:i||null,old,diff:i?r.stock-old:null,hasCenterRecord,needsCreate:!!i&&!hasCenterRecord};
+    });
+    const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item),changed=matched.filter(x=>x.needsCreate||Math.abs(x.diff)>0.000001);
+    pendingSaveStockImport={fileName:file.name,center,rows,preview};
+    const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${!x.item?'Não encontrado':x.needsCreate?'Novo no centro':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${x.cost==null?'—':money(x.cost)}</td></tr>`).join('');
+    openModal(`<h2>📥 Prévia — ${esc(center)}</h2><p><b>${esc(file.name)}</b></p><div class="kpis"><div class="kpi"><span>Centro</span><b>${esc(center)}</b></div><div class="kpi"><span>Linhas SAVE</span><b>${rows.length}</b></div><div class="kpi"><span>Encontrados</span><b>${matched.length}</b></div><div class="kpi"><span>A atualizar/criar</span><b>${changed.length}</b></div><div class="kpi"><span>Não encontrados</span><b>${missing.length}</b></div></div><p class="muted">Prévia somente leitura. Nada será alterado antes da confirmação.</p><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input id="saveUpdateCost" type="checkbox"> Atualizar também o custo médio deste centro pelo SAVE</label><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo HNSS — ${esc(center)}</th><th>Saldo SAVE</th><th>Diferença</th><th>C. Médio SAVE</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar importação de ${esc(center)}</button></div>`);
+  }catch(e){console.error(e);toast('Falha ao ler arquivo do SAVE: '+(e.message||e))}
+}
+async function confirmSaveStockImport(){
+  if(!pendingSaveStockImport||!sb)return;
+  const updateCost=!!document.getElementById('saveUpdateCost')?.checked,p=pendingSaveStockImport;
+  const changedRows=p.preview.filter(x=>x.item&&(x.needsCreate||Math.abs(Number(x.diff||0))>0.000001||(updateCost&&x.cost!=null)));
+  if(!changedRows.length){pendingSaveStockImport=null;closeModal();toast(`${p.center}: nenhum saldo diferente e nenhum produto novo neste centro para atualizar.`);return}
+  if(!confirm(`Confirmar ${changedRows.length} alteração(ões) no centro ${p.center}?`))return;
+  try{
+    const payload=changedRows.map(x=>({code:x.code,stock:x.stock,cost:x.cost}));
+    const {data,error}=await sb.rpc('import_save_stock_center',{p_file_name:p.fileName,p_cost_center:p.center,p_rows:payload,p_update_cost:updateCost});
+    if(error)throw error;
+    pendingSaveStockImport=null;closeModal();await refresh();renderStock();
+    toast(`${data?.cost_center||p.center}: ${data?.updated??0} saldo(s) atualizado(s) · ${data?.not_found??0} não encontrado(s).`);
+  }catch(e){console.error(e);toast('Não foi possível importar o estoque por centro: '+(e.message||e))}
+}
+
 function renderProducts(){
   const items=cache.items||[];
   const rows=items.slice(0,120).map(i=>`<tr><td>${esc(i.code||'-')}</td><td>${esc(i.name||'-')}</td><td>${esc(i.unit||'-')}</td><td>${money(i.last_unit_price||0)}</td><td>${i.updated_at?new Date(i.updated_at).toLocaleDateString('pt-BR'):'-'}</td><td><button class="secondary" onclick="editProduct('${i.id}')">✏️ Editar</button></td></tr>`).join('');
@@ -1139,8 +1352,22 @@ function supplierForm(s={}){openModal(`<h2>${s.id?'Editar':'Novo'} fornecedor</h
 function editSupplier(id){let s=cache.suppliers.find(x=>String(x.id)===String(id));if(s)supplierForm(s)}
 async function saveSupplier(id=''){let name=($('s_name')?.value||'').trim();if(!name){toast('Informe o nome do fornecedor');return}let o={name,cnpj:($('s_cnpj')?.value||'').trim(),phone:($('s_phone')?.value||'').trim(),email:($('s_email')?.value||'').trim(),order_email:($('s_order_email')?.value||$('s_email')?.value||'').trim()};try{if(sb){let r=id?await sb.from('suppliers').update(o).eq('id',id):await sb.from('suppliers').insert(o);if(r.error)throw r.error;await refresh()}else{if(id){let s=cache.suppliers.find(x=>String(x.id)===String(id));if(s)Object.assign(s,o)}else cache.suppliers.push({...o,id:Date.now(),active:true})}closeModal();renderSuppliers();toast(id?'Fornecedor atualizado com sucesso':'Fornecedor cadastrado com sucesso')}catch(e){toast(e.message||'Não foi possível salvar o fornecedor')}}
 
-function renderPurchases(){let rows=cache.purchases.map(p=>{let sent=['Enviado ao fornecedor','Confirmado'].includes(p.status),editable=['Aguardando envio','Pendente'].includes(p.status),quoteCount=cache.quotes.filter(q=>String(q.purchase_id)===String(p.id)).length;let compareBtn=quoteCount?` <button class="secondary" onclick="compareQuotes('${p.id}')">⚖️ Comparar (${quoteCount})</button>`:'';let action=sent?`<button class="secondary" onclick="sendPurchaseEmail('${p.id}')">🔁 Reenviar proposta</button>`:editable?`<button class="secondary" onclick="editPurchase('${p.id}')">✏️ Editar</button> <button class="primary" onclick="sendPurchaseEmail('${p.id}')">📧 Enviar proposta</button>`:`<button class="primary" onclick="sendPurchaseEmail('${p.id}')">📧 Enviar proposta</button>`;action+=compareBtn+`${['Aprovada','Pedido emitido','Confirmado','Recebida'].includes(p.status)?` <button class="primary" onclick="purchaseOrder('${p.id}')">🛒 Pedido</button>`:''}${['Pedido emitido','Confirmado','Recebida'].includes(p.status)?` <button class="primary" onclick="openReceiving('${p.id}')">📦 Recebimento + NF</button>`:''} <button class="secondary" onclick="purchaseProcess('${p.id}')">📁 Processo</button> ${['Aprovada','Pedido emitido','Confirmado','Recebida'].includes(p.status)?`<button class="secondary" onclick="purchaseApprovalView('${p.id}')">👁 Aprovação</button>`:`<button class="secondary" onclick="approvePurchase('${p.id}')">✅ Aprovar</button>`} <button class="secondary danger" onclick="deletePurchase('${p.id}')">🗑️ Excluir</button>`;return `<tr><td>${esc(p.number||'-')}</td><td>${esc(p.requested_by_name||'-')}</td><td><span class="badge ${sent?'ok':'warn'}">${esc(p.status||'Pendente')}</span></td><td>${money(p.total_value)}</td><td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td><td>${action}</td></tr>`}).join('');$('page-compras').innerHTML=`<div class="card panel"><div class="toolbar"><button class="primary" onclick="purchaseForm()">+ Nova requisição</button><button class="secondary" onclick="purchaseForm(true)">Gerar sugestão automática</button><button class="secondary" onclick="renderQuotes()">📨 Cotações recebidas</button><button class="secondary" onclick="connectGmail()">🔗 Conectar Gmail</button><button class="primary" onclick="loadQuotes()">🔄 Atualizar cotações</button><button class="secondary" onclick="openQuoteCenterFromPurchase(cache.purchases[0]?.id)">📊 Central de respostas</button></div><h2>📋 Requisições e propostas</h2><p class="muted">Crie uma requisição com vários itens e, antes de enviar, você pode editar os itens, quantidades, fornecedor e observações.</p><div class="table-wrap"><table class="table"><thead><tr><th>Nº</th><th>Solicitante</th><th>Status</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan=6>Nenhuma compra registrada.</td></tr>'}</tbody></table></div></div>`}
-async function deletePurchase(id){let p=cache.purchases.find(x=>String(x.id)===String(id));if(!p){toast('Requisição não encontrada');return}if(['Enviado ao fornecedor','Confirmado','Pedido emitido','Recebida'].includes(String(p.status||''))){toast('Requisições já enviadas ou recebidas não podem ser excluídas');return}if(!confirm(`Excluir a requisição ${p.number||''}?\n\nA requisição, seus itens e cotações vinculadas serão excluídos. Essa ação não pode ser desfeita.`))return;try{if(sb){let r=await sb.from('purchase_requests').delete().eq('id',id);if(r.error)throw r.error;await refresh()}else{cache.purchases=cache.purchases.filter(x=>String(x.id)!==String(id));cache.requestItems=cache.requestItems.filter(x=>String(x.request_id)!==String(id));cache.quotes=cache.quotes.filter(x=>String(x.purchase_id)!==String(id))}renderPurchases();toast('Requisição excluída com sucesso')}catch(e){console.error(e);toast('Não foi possível excluir: '+(e.message||'erro'))}}
+function renderPurchases(){let rows=cache.purchases.map(p=>{let sent=['Enviado ao fornecedor','Confirmado'].includes(p.status),editable=['Aguardando envio','Pendente'].includes(p.status),quoteCount=cache.quotes.filter(q=>String(q.purchase_id)===String(p.id)).length;let compareBtn=quoteCount?` <button class="secondary" onclick="compareQuotes('${p.id}')">⚖️ Comparar (${quoteCount})</button>`:'';let consultationCount=cache.consultations.filter(c=>String(c.purchase_id)===String(p.id)).length;let action=consultationCount>1?`<button class="primary" onclick="sendQuoteRequests('${p.id}')">📨 Enviar propostas (${consultationCount})</button>`:(sent?`<button class="secondary" onclick="sendPurchaseEmail('${p.id}')">🔁 Reenviar proposta</button>`:editable?`<button class="secondary" onclick="editPurchase('${p.id}')">✏️ Editar</button> <button class="primary" onclick="sendPurchaseEmail('${p.id}')">📧 Enviar proposta</button>`:`<button class="primary" onclick="sendPurchaseEmail('${p.id}')">📧 Enviar proposta</button>`);action+=compareBtn+`${purchaseCanOrder(p)?` <button class="primary" onclick="purchaseOrder('${p.id}')">🛒 Pedido</button>`:''}${['Pedido emitido','Confirmado','Recebida'].includes(p.status)?` <button class="primary" onclick="openReceiving('${p.id}')">📦 Recebimento + NF</button>`:''} <button class="secondary" onclick="purchaseProcess('${p.id}')">📁 Processo</button> ${persistedApproval(p.id)?`<button class="secondary" onclick="purchaseApprovalView('${p.id}')">👁 Aprovação</button>`:`<button class="secondary" onclick="approvePurchase('${p.id}')">✅ Aprovar</button>`} <button class="secondary danger" onclick="deletePurchase('${p.id}')">🗑️ Excluir</button>`;return `<tr><td>${esc(p.number||'-')}</td><td>${esc(p.requested_by_name||'-')}</td><td><span class="badge ${sent?'ok':'warn'}">${esc(p.status||'Pendente')}</span></td><td>${money(p.total_value)}</td><td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td><td>${action}</td></tr>`}).join('');$('page-compras').innerHTML=`<div class="card panel"><div class="toolbar"><button class="primary" onclick="purchaseForm()">+ Nova requisição</button><button class="secondary" onclick="purchaseForm(true)">Gerar sugestão automática</button><button class="secondary" onclick="renderQuotes()">📨 Cotações recebidas</button><button class="secondary" onclick="connectGmail()">🔗 Conectar Gmail</button><button class="primary" onclick="loadQuotes()">🔄 Atualizar cotações</button><button class="secondary" onclick="openQuoteCenterFromPurchase(cache.purchases[0]?.id)">📊 Central de respostas</button></div><div class="process-banner process-complete" style="margin:12px 0"><b>Fluxo auditado:</b> Requisição → envio de cotação → resposta → comparação → aprovação formal → pedido → envio → recebimento/NF → sincronização SAVE.</div><h2>📋 Requisições e propostas</h2><p class="muted">Crie uma requisição com vários itens e, antes de enviar, você pode editar os itens, quantidades, fornecedor e observações.</p><div class="table-wrap"><table class="table"><thead><tr><th>Nº</th><th>Solicitante</th><th>Status</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan=6>Nenhuma compra registrada.</td></tr>'}</tbody></table></div></div>`}
+async function deletePurchase(id){
+  const p=cache.purchases.find(x=>String(x.id)===String(id));
+  if(!p){toast('Requisição não encontrada');return}
+  const hasHistory=(cache.consultations||[]).some(x=>String(x.purchase_id)===String(id))||
+                   (cache.quotes||[]).some(x=>String(x.purchase_id)===String(id))||
+                   !!persistedApproval(id);
+  if(!['Aguardando envio','Pendente'].includes(String(p.status||''))||hasHistory){
+    toast('Para preservar a auditoria, somente requisições ainda não enviadas e sem histórico podem ser excluídas');return;
+  }
+  if(!confirm(`Excluir a requisição ${p.number||''}? Essa ação não pode ser desfeita.`))return;
+  try{
+    if(sb){const r=await sb.from('purchase_requests').delete().eq('id',id);if(r.error)throw r.error;await refresh()}
+    renderPurchases();toast('Requisição excluída com sucesso');
+  }catch(e){console.error(e);toast('Não foi possível excluir: '+(e.message||'erro'))}
+}
 let editReqSelection={};
 function renderEditReqRows(){
   const v=normalizeSearch($('editReqSearch')?.value||'');
@@ -1154,7 +1381,7 @@ function renderEditReqRows(){
   const rows=list.map(i=>{
     const st=editReqSelection[String(i.id)];
     const qty=st?.quantity||1;
-    return `<tr class="edit-req-row" data-id="${esc(i.id)}"><td><input type="checkbox" class="edit-req-check" ${st?'checked':''}></td><td>${esc(i.code||'')}</td><td>${esc(i.name)}</td><td>${Number(i.current_stock||0)} ${esc(i.unit||'')}</td><td><input class="edit-req-qty" type="number" step="0.01" min="0" value="${qty}" style="width:110px" ${st?'':'disabled'}></td><td>${money(i.last_unit_price||0)}</td></tr>`
+    return `<tr class="edit-req-row" data-id="${esc(i.id)}"><td><input type="checkbox" class="edit-req-check" ${st?'checked':''}></td><td>${esc(i.code||'')}</td><td>${esc(i.name)}</td><td>${stockForOperational(i)===null?'Não sincronizado':Number(stockForOperational(i))+' '+esc(i.unit||'')}</td><td><input class="edit-req-qty" type="number" step="0.01" min="0" value="${qty}" style="width:110px" ${st?'':'disabled'}></td><td>${money(i.last_unit_price||0)}</td></tr>`
   }).join('');
   $('editReqTable').querySelector('tbody').innerHTML=rows||'<tr><td colspan="6">Nenhum item encontrado. Digite parte do código ou nome.</td></tr>';
   document.querySelectorAll('.edit-req-check').forEach(ch=>ch.onchange=()=>{
@@ -1227,6 +1454,7 @@ async function savePurchaseEdit(id){
       Object.assign(p,update);
       cache.requestItems=cache.requestItems.filter(x=>String(x.request_id)!==String(id));
       cache.requestItems.push(...selected.map(x=>({id:Date.now()+Math.random(),request_id:id,item_id:x.item.id,quantity:x.quantity,unit_price:Number(x.item.last_unit_price||0),total:x.quantity*Number(x.item.last_unit_price||0)})));
+      supplierIds.forEach(sid=>cache.consultations.push({id:Date.now()+Math.random(),purchase_id:id,supplier_id:sid,channel:'email',response_status:'Aguardando',created_at:new Date().toISOString()}));
     }
     closeModal();
     renderPurchases();
@@ -1236,7 +1464,7 @@ async function savePurchaseEdit(id){
     toast('Não foi possível atualizar a requisição: '+(e.message||'erro'));
   }finally{purchaseSaveBusy=false;if(btn){btn.disabled=false;btn.textContent='💾 Salvar alterações'}}
 }
-function renderQuotes(){let rows=cache.quotes.map(q=>{let p=cache.purchases.find(x=>String(x.id)===String(q.purchase_id));let sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));return `<tr><td>${esc(p?.number||'-')}</td><td>${esc(sup?.name||q.from_name||q.from_email||'-')}</td><td>${esc(q.subject||'-')}</td><td>${new Date(q.received_at).toLocaleString('pt-BR')}</td><td>${money(q.total_value)}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(q.status||'Recebida')}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button><button type="button" class="secondary" onclick="compareQuotes('${q.purchase_id}')">⚖️ Comparar</button><button type="button" class="primary" onclick="editQuote('${q.id}')">✏️ Editar cotação</button></td></tr>`}).join('');$('page-compras').innerHTML=`<div class="card panel"><div class="toolbar"><button class="secondary" onclick="renderPurchases()">📋 Requisições</button><button class="secondary" onclick="connectGmail()">🔗 Conectar Gmail</button><button class="primary" onclick="loadQuotes()">🔄 Atualizar cotações</button></div><h2>📨 Cotações recebidas</h2><p class="muted">As respostas dos fornecedores serão importadas do Gmail e vinculadas automaticamente à solicitação pelo número da requisição.</p><div class="table-wrap"><table class="table"><thead><tr><th>Solicitação</th><th>Fornecedor</th><th>Assunto</th><th>Recebida em</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=7 style="padding:22px;text-align:center">Nenhuma cotação recebida ainda.</td></tr>'}</tbody></table></div></div>`}
+function renderQuotes(){let rows=cache.quotes.map(q=>{let p=cache.purchases.find(x=>String(x.id)===String(q.purchase_id));let sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));return `<tr><td>${esc(p?.number||'-')}</td><td>${esc(sup?.name||q.from_name||q.from_email||'-')}</td><td>${esc(q.subject||'-')}</td><td>${new Date(q.received_at).toLocaleString('pt-BR')}</td><td>${money(q.total_value)}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button><button type="button" class="secondary" onclick="compareQuotes('${q.purchase_id}')">⚖️ Comparar</button><button type="button" class="primary" onclick="editQuote('${q.id}')">✏️ Editar cotação</button></td></tr>`}).join('');$('page-compras').innerHTML=`<div class="card panel"><div class="toolbar"><button class="secondary" onclick="renderPurchases()">📋 Requisições</button><button class="secondary" onclick="connectGmail()">🔗 Conectar Gmail</button><button class="primary" onclick="loadQuotes()">🔄 Atualizar cotações</button></div><h2>📨 Cotações recebidas</h2><p class="muted">As respostas dos fornecedores serão importadas do Gmail e vinculadas automaticamente à solicitação pelo número da requisição.</p><div class="table-wrap"><table class="table"><thead><tr><th>Solicitação</th><th>Fornecedor</th><th>Assunto</th><th>Recebida em</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=7 style="padding:22px;text-align:center">Nenhuma cotação recebida ainda.</td></tr>'}</tbody></table></div></div>`}
 
 function compareQuotes(purchaseId){
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
@@ -1254,9 +1482,9 @@ function compareQuotes(purchaseId){
     const name=sup?.name||q.from_name||q.from_email||'Fornecedor não identificado';
     const total=Number(q.total_value||0);
     const isWinner=winner&&String(winner.id)===String(q.id);
-    return `<tr ${isWinner?'style="font-weight:800;background:#f0fff5"':''}><td>${isWinner?'🏆 ':''}${esc(name)}</td><td>${esc(q.from_email||'-')}</td><td>${total>0?money(total):'<span class="muted">Aguardando valor</span>'}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(q.status||'Recebida')}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button>${q.status!=='Aprovada'&&total>0?` <button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${purchaseId}')">✅ Dar aceite</button>`:''}</td></tr>`;
+    return `<tr ${isWinner?'style="font-weight:800;background:#f0fff5"':''}><td>${isWinner?'🏆 ':''}${esc(name)}</td><td>${esc(q.from_email||'-')}</td><td>${total>0?money(total):'<span class="muted">Aguardando valor</span>'}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button>${!persistedApproval(purchaseId)&&total>0?` <button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${purchaseId}')">✅ Dar aceite</button>`:''}</td></tr>`;
   }).join('');
-  const approveButton=winner&&winner.status!=='Aprovada'?`<button class="primary" onclick="openQuoteApproval('${winner.id}','${purchaseId}')">✅ Analisar e dar aceite</button>`:(winner&&winner.status==='Aprovada'?`<span class="badge ok">✅ Cotação aprovada</span>`:'');
+  const formal=persistedApproval(purchaseId); const approveButton=winner&&!formal?`<button class="primary" onclick="openQuoteApproval('${winner.id}','${purchaseId}')">✅ Analisar e dar aceite</button>`:(formal?`<span class="badge ok">✅ Compra formalmente aprovada</span>`:'');
   openModal(`<h2>⚖️ Comparação de cotações</h2>
     <div class="card panel" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Valor estimado</div><strong>${money(p.total_value||0)}</strong></div><div><div class="muted">Cotações recebidas</div><strong>${qs.length}</strong></div></div></div>
     <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Fornecedor</th><th>E-mail</th><th>Total da proposta</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=5 style="padding:22px;text-align:center">Nenhuma cotação recebida para esta requisição.</td></tr>'}</tbody></table></div>
@@ -1290,55 +1518,38 @@ async function approveQuote(quoteId,purchaseId){
   const q=cache.quotes.find(x=>String(x.id)===String(quoteId));
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
   if(!q||!p){toast('Cotação ou requisição não encontrada');return}
+  if(persistedApproval(purchaseId)){toast('Esta requisição já possui aprovação formal registrada');return}
   const total=Number(q.total_value||0);
-  if(!(total>0)){toast('A cotação selecionada não possui um valor positivo');return}
+  if(!(total>0)){toast('A cotação selecionada não possui valor positivo');return}
+  if(!q.supplier_id){toast('Vincule a cotação a um fornecedor antes da aprovação');return}
   const justification=String($('qa_just')?.value||'').trim();
   if(!justification){toast('Informe a justificativa do aceite');return}
-  const supplierId=q.supplier_id||null;
-  const valid=cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&Number(x.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
-  const lowest=valid[0]||null;
-  const isLowest=lowest&&String(lowest.id)===String(q.id);
-  if(!isLowest && valid.length>=2){
-    const ok=confirm(`A cotação escolhida não é a menor.
-
-Menor preço: ${money(lowest.total_value)}
-Escolhida: ${money(total)}
-
-A justificativa informada será registrada no processo. Deseja continuar?`);
-    if(!ok)return;
-  }
   try{
-    if(sb){
-      const other=await sb.from('purchase_quotes').update({status:'Recebida'}).eq('purchase_id',purchaseId).neq('id',quoteId).eq('status','Aprovada');
-      if(other.error)throw other.error;
-      const uq=await sb.from('purchase_quotes').update({status:'Aprovada'}).eq('id',quoteId);
-      if(uq.error)throw uq.error;
-      const up=await sb.from('purchase_requests').update({status:'Aprovada',supplier_id:supplierId,total_value:total,selection_justification:justification,approved_by:session?.user?.id||null,approved_at:new Date().toISOString(),order_number:'PC-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+Date.now().toString().slice(-6)}).eq('id',purchaseId);
-      if(up.error)throw up.error;
-      await refresh();
-    }else{
-      cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&String(x.id)!==String(quoteId)&&x.status==='Aprovada').forEach(x=>x.status='Recebida');
-      q.status='Aprovada';
-      Object.assign(p,{status:'Aprovada',supplier_id:supplierId,total_value:total,selection_justification:justification,approved_by:session?.user?.id||null,approved_at:new Date().toISOString(),order_number:'PC-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+Date.now().toString().slice(-6)});
-    }
-    closeModal();
-    renderPurchases();
-    toast(`Aceite registrado e Pedido ${p.order_number||''} criado · ${money(total)}`);
+    if(!sb){toast('A aprovação exige conexão com o banco');return}
+    const {error}=await sb.rpc('approve_purchase_persisted',{
+      p_purchase_id:purchaseId,p_quote_id:quoteId,p_justification:justification
+    });
+    if(error)throw error;
+    await refresh();
+    const updated=cache.purchases.find(x=>String(x.id)===String(purchaseId));
+    closeModal(); renderPurchases();
+    toast(`Aprovação formal registrada · Pedido ${updated?.order_number||'-'} · ${money(total)}`);
   }catch(e){
-    console.error(e);
-    toast('Não foi possível registrar o aceite: '+(e.message||'erro'));
+    console.error(e); toast('Não foi possível registrar a aprovação: '+(e.message||'erro'));
   }
 }
 function purchaseOrder(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
   if(!p){toast('Requisição não encontrada');return}
-  if(!['Aprovada','Pedido emitido','Confirmado','Recebida'].includes(p.status||'')){toast('O pedido de compra só pode ser criado após o aceite da cotação');return}
+  if(!purchaseCanOrder(p)){toast('O pedido só pode ser emitido após aprovação formal registrada');return}
   const items=cache.requestItems.filter(x=>String(x.request_id)===String(id));
   const sup=cache.suppliers.find(x=>String(x.id)===String(p.supplier_id));
-  const rows=items.map(ri=>{const it=cache.items.find(x=>String(x.id)===String(ri.item_id));return `<tr><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${esc(it?.unit||'-')}</td><td>${Number(ri.quantity||0)}</td><td>${money(ri.unit_price||0)}</td><td>${money(ri.total||Number(ri.quantity||0)*Number(ri.unit_price||0))}</td></tr>`}).join('');
-  openModal(`<h2>🛒 Pedido de Compra</h2><div class="card panel" style="margin-top:12px"><div class="grid"><div><div class="muted">Número do pedido</div><strong style="font-size:20px">${esc(p.order_number||'-')}</strong></div><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Fornecedor</div><strong>${esc(sup?.name||'Fornecedor não identificado')}</strong></div><div><div class="muted">Valor total</div><strong style="font-size:20px">${money(p.total_value)}</strong></div></div></div><div class="card panel" style="margin-top:14px"><h3 style="margin-top:0">Itens do pedido</h3><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Nenhum item.</td></tr>'}</tbody></table></div></div><div class="process-banner process-complete" style="margin-top:14px"><b>✅ Pedido criado automaticamente após o aceite</b><div class="muted" style="margin-top:4px">Fornecedor, itens, quantidades e valores foram herdados da requisição aprovada.</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button><button class="secondary" onclick="printPurchaseOrder('${id}')">🖨️ Imprimir</button><button class="primary" onclick="sendPurchaseOrder('${id}')">📨 Registrar envio ao fornecedor</button></div>`);
+  const baseSum=items.reduce((sum,ri)=>sum+Number(ri.total||Number(ri.quantity||0)*Number(ri.unit_price||0)),0);
+  const approvedTotal=Number(p.total_value||0);
+  const rows=items.map((ri,idx)=>{const it=cache.items.find(x=>String(x.id)===String(ri.item_id));const qty=Number(ri.quantity||0);const base=Number(ri.total||qty*Number(ri.unit_price||0));const approvedLine=Number(ri.quoted_total??(baseSum>0?approvedTotal*base/baseSum:base));const approvedUnit=Number(ri.quoted_unit_price??(qty>0?approvedLine/qty:0));return `<tr><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${esc(it?.unit||'-')}</td><td>${qty}</td><td>${money(approvedUnit)}</td><td>${money(approvedLine)}</td></tr>`}).join('');
+  openModal(`<h2>🛒 Pedido de Compra</h2><div class="card panel" style="margin-top:12px"><div class="grid"><div><div class="muted">Número do pedido</div><strong style="font-size:20px">${esc(p.order_number||'-')}</strong></div><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Fornecedor</div><strong>${esc(sup?.name||'Fornecedor não identificado')}</strong></div><div><div class="muted">Valor total</div><strong style="font-size:20px">${money(p.total_value)}</strong></div></div></div><div class="card panel" style="margin-top:14px"><h3 style="margin-top:0">Itens do pedido</h3><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Nenhum item.</td></tr>'}</tbody></table></div></div><div class="process-banner process-complete" style="margin-top:14px"><b>✅ Pedido criado automaticamente após o aceite</b><div class="muted" style="margin-top:4px">Fornecedor, itens, quantidades e valores foram herdados da requisição aprovada.</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button><button class="secondary" onclick="printPurchaseOrder('${id}')">🖨️ Imprimir</button><button class="primary" onclick="sendPurchaseOrder('${id}')">📨 Enviar pedido ao fornecedor</button></div>`);
 }
-function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===String(id));if(!p)return;const items=cache.requestItems.filter(x=>String(x.request_id)===String(id));const sup=cache.suppliers.find(x=>String(x.id)===String(p.supplier_id));const win=window.open('','_blank');if(!win){toast('Permita pop-ups para imprimir o pedido');return}const rows=items.map(ri=>{const it=cache.items.find(x=>String(x.id)===String(ri.item_id));return `<tr><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${esc(it?.unit||'-')}</td><td>${Number(ri.quantity||0)}</td><td>${money(ri.unit_price||0)}</td><td>${money(ri.total||Number(ri.quantity||0)*Number(ri.unit_price||0))}</td></tr>`}).join('');win.document.write(`<html><head><title>${esc(p.order_number||'Pedido de Compra')}</title><style>body{font-family:Arial;padding:35px;color:#172033}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f4f6f8}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:18px}
+function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===String(id));if(!p)return;const items=cache.requestItems.filter(x=>String(x.request_id)===String(id));const sup=cache.suppliers.find(x=>String(x.id)===String(p.supplier_id));const win=window.open('','_blank');if(!win){toast('Permita pop-ups para imprimir o pedido');return}const baseSum=items.reduce((sum,ri)=>sum+Number(ri.total||Number(ri.quantity||0)*Number(ri.unit_price||0)),0);const approvedTotal=Number(p.total_value||0);const rows=items.map(ri=>{const it=cache.items.find(x=>String(x.id)===String(ri.item_id));const qty=Number(ri.quantity||0);const base=Number(ri.total||qty*Number(ri.unit_price||0));const approvedLine=Number(ri.quoted_total??(baseSum>0?approvedTotal*base/baseSum:base));const approvedUnit=Number(ri.quoted_unit_price??(qty>0?approvedLine/qty:0));return `<tr><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${esc(it?.unit||'-')}</td><td>${qty}</td><td>${money(approvedUnit)}</td><td>${money(approvedLine)}</td></tr>`}).join('');win.document.write(`<html><head><title>${esc(p.order_number||'Pedido de Compra')}</title><style>body{font-family:Arial;padding:35px;color:#172033}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f4f6f8}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:18px}
 .eyebrow{font-size:10px;font-weight:800;letter-spacing:.12em;color:#718096;margin-bottom:5px}.dash-head h2{margin:0 0 5px}.kpi-top{display:flex;justify-content:space-between;align-items:center}.kpi-tag,.section-count{font-size:10px;font-weight:800;letter-spacing:.08em;color:#7b8798;background:#f3f6fa;border-radius:999px;padding:5px 8px}.danger-kpi .kpi-tag{background:#fff1f2;color:#b4232f}.dash-command-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin:16px 0}.command-card{padding:20px}.command-title{display:flex;justify-content:space-between;align-items:flex-start}.command-title h3{margin:0}.command-title>strong{font-size:28px;letter-spacing:-.04em}.health-track{height:9px;background:#edf1f5;border-radius:999px;overflow:hidden;margin:18px 0 14px}.health-track i,.progress i{display:block;height:100%;border-radius:999px;background:currentColor}.command-metrics{display:flex;gap:18px;flex-wrap:wrap;color:#718096;font-size:12px}.command-metrics b{color:#172033}.flow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.flow-grid button{border:1px solid #e6ebf1;background:#fff;border-radius:12px;padding:12px;text-align:left;cursor:pointer;transition:.18s}.flow-grid button:hover{transform:translateY(-2px);border-color:#c9d6e8}.flow-grid strong{display:block;font-size:22px;color:#172033}.flow-grid span{font-size:11px;color:#718096}.section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.status-list{display:grid;gap:2px}.dash-status-row>div:first-child{display:flex;justify-content:space-between;padding:8px 0 5px;font-size:12px}.dash-status-row .progress{height:6px;background:#eef2f6;border-radius:999px;overflow:hidden}.quick-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.quick-summary span{font-size:12px;color:#718096;border-top:1px solid #edf0f5;padding-top:12px}.quick-summary b{display:block;color:#172033;font-size:18px;margin-top:2px}.alert{display:flex;justify-content:space-between;gap:12px;align-items:center}.alert span{font-size:11px;color:#718096}.alert strong{max-width:58%}
 @media(max-width:900px){.dash-command-grid{grid-template-columns:1fr}.flow-grid{grid-template-columns:1fr}.quick-summary{grid-template-columns:1fr}}
 .smart-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:18px}.smart-card{padding:20px}.smart-card h3{margin:0 0 5px;font-size:16px}.smart-value{font-size:28px;font-weight:800;margin-top:10px}.smart-meta{font-size:12px;color:#697386;margin-top:5px}.smart-list{display:grid;gap:10px;margin-top:14px}.smart-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid #e7ebf1;border-radius:10px;background:#fbfcfe}.smart-row strong{font-size:13px}.smart-row span{font-size:12px;color:#697386}.smart-alert{border-left:4px solid #e05252}.smart-ok{border-left:4px solid #2e9d68}.smart-warn{border-left:4px solid #d69a19}.smart-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.smart-actions button{padding:9px 12px}@media(max-width:900px){.smart-grid{grid-template-columns:1fr}}
@@ -1358,122 +1569,40 @@ function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===S
 .smart-actions button{padding:9px 12px;font-size:13px}
 @media(max-width:900px){.smart-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:550px){.smart-grid{grid-template-columns:1fr}}
-</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div>
-<script id="hnss-5-9-5-hardening">
-/* HNSS 5.9.7 - Hardening operacional / teste de estresse */
-(function(){
-  window.HNSS_DIAGNOSTIC = window.HNSS_DIAGNOSTIC || {
-    startedAt: new Date().toISOString(),
-    errors: [],
-    events: []
-  };
-  function log(type,data){
-    try{
-      window.HNSS_DIAGNOSTIC.events.push({time:new Date().toISOString(),type:type,data:String(data||'').slice(0,300)});
-      if(window.HNSS_DIAGNOSTIC.events.length>100) window.HNSS_DIAGNOSTIC.events.shift();
-    }catch(e){}
-  }
-  window.addEventListener('error',function(e){
-    window.HNSS_DIAGNOSTIC.errors.push({time:new Date().toISOString(),message:e.message||'erro',file:e.filename||'',line:e.lineno||0});
-    log('javascript_error',e.message);
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    window.HNSS_DIAGNOSTIC.errors.push({time:new Date().toISOString(),message:String(e.reason||'promise rejeitada')});
-    log('promise_error',e.reason);
-  });
-  const oldFetch=window.fetch;
-  window.fetch=function(){
-    const start=performance.now();
-    return oldFetch.apply(this,arguments).then(function(r){
-      log('fetch',((r.url||'')+' '+Math.round(performance.now()-start)+'ms'));
-      return r;
-    }).catch(function(e){log('fetch_error',e.message);throw e;});
-  };
-  window.hnssHealth=function(){
-    return {
-      generated:new Date().toISOString(),
-      memory:performance.memory?Math.round(performance.memory.usedJSHeapSize/1024/1024)+' MB':'n/d',
-      errors:window.HNSS_DIAGNOSTIC.errors.length,
-      events:window.HNSS_DIAGNOSTIC.events.length
-    };
-  };
-})();
-</script>
-
-<script>
-/* HNSS 5.9.7 - Performance Enterprise Layer
-   Camada complementar sem alterar regras de negócio.
-*/
-(function(){
-  window.HNSS_PERFORMANCE={
-    startedAt:Date.now(),
-    events:[],
-    log:function(type,data){
-      this.events.push({time:new Date().toISOString(),type,data});
-      if(this.events.length>200)this.events.shift();
-    },
-    memory:function(){
-      try{return performance.memory?{
-        used:Math.round(performance.memory.usedJSHeapSize/1048576)+' MB',
-        total:Math.round(performance.memory.totalJSHeapSize/1048576)+' MB'
-      }:null}catch(e){return null}
-    }
-  };
-  window.addEventListener('error',function(e){
-    HNSS_PERFORMANCE.log('javascript_error',{message:e.message});
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    HNSS_PERFORMANCE.log('promise_error',{message:String(e.reason||'erro')});
-  });
-  const oldFetch=window.fetch;
-  window.fetch=function(){
-    const start=Date.now();
-    return oldFetch.apply(this,arguments).then(function(r){
-      HNSS_PERFORMANCE.log('fetch',{url:arguments[0],ms:Date.now()-start,status:r.status});
-      return r;
-    }).catch(function(err){
-      HNSS_PERFORMANCE.log('fetch_error',{message:String(err)});
-      throw err;
-    });
-  };
-})();
-</script>
-
-<!-- HNSS 5.9.9 SECURITY GOVERNANCE LAYER -->
-<script>
-(function(){
-  window.HNSS_SECURITY={
-    version:'5.9.8',
-    events:[],
-    log(action,data={}){
-      this.events.push({time:new Date().toISOString(),action,data});
-      if(this.events.length>200)this.events.shift();
-    },
-    getAudit(){return this.events.slice();}
-  };
-  window.addEventListener('error',e=>HNSS_SECURITY.log('javascript_error',{message:e.message,source:e.filename||''}));
-  window.addEventListener('unhandledrejection',e=>HNSS_SECURITY.log('promise_error',{message:String(e.reason||'unknown')}));
-  HNSS_SECURITY.log('system_loaded',{version:'5.9.8'});
-})();
-</script>
-
-<script>
-// HNSS 5.9.9 - Auditoria Operacional Completa
-window.HNSS_AUDIT_LOG = window.HNSS_AUDIT_LOG || [];
-function hnssAudit(event, detail){
+</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
+async function sendPurchaseOrder(id){
+  const p=cache.purchases.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  if(!['Aprovada','Pedido emitido'].includes(String(p.status||''))){toast('Somente compras aprovadas podem enviar pedido');return}
+  const sup=cache.suppliers.find(x=>String(x.id)===String(p.supplier_id));
+  const email=sup?.order_email||sup?.email||'';
+  if(!email){toast('Fornecedor não possui e-mail para pedidos cadastrado');return}
+  if(!sb){toast('É necessário estar conectado ao HNSS para enviar o pedido por e-mail');return}
+  if(!confirm(`Enviar agora o Pedido ${p.order_number||p.number||''} por e-mail para ${email}?`))return;
   try{
-    window.HNSS_AUDIT_LOG.push({event:String(event||''),detail:detail||null,at:new Date().toISOString(),user:window.session?.user?.email||null});
-    if(window.HNSS_AUDIT_LOG.length>200) window.HNSS_AUDIT_LOG.shift();
-  }catch(e){}
+    const fresh=await ensureFreshSession();
+    toast('Enviando pedido ao fornecedor...');
+    const resp=await fetch(`${CONFIG.url}/functions/v1/send-purchase-order-email`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':CONFIG.anonKey,
+        'Authorization':`Bearer ${fresh.access_token}`
+      },
+      body:JSON.stringify({purchase_id:id})
+    });
+    let data={};
+    try{data=await resp.json()}catch(_){}
+    if(!resp.ok||!data?.ok)throw new Error(data?.error||`Falha no envio do pedido (HTTP ${resp.status})`);
+    await refresh();
+    closeModal();
+    renderPurchases();
+    toast(`Pedido enviado por e-mail para ${data.sent_to||email}`);
+  }catch(e){
+    console.error(e);
+    toast('Pedido NÃO enviado: '+(e?.message||'erro no envio'));
+  }
 }
-window.addEventListener('error',e=>hnssAudit('javascript_error',{message:e.message}));
-window.addEventListener('unhandledrejection',e=>hnssAudit('promise_error',{message:String(e.reason||'')}));
-hnssAudit('system_loaded',{version:'5.9.9'});
-</script>
-<!-- HNSS 6.0 - Arquitetura Hospital Enterprise - preparação de evolução modular -->
-<!-- HNSS 6.0.1 validation patch: print template corrected -->
-</body></html>`);win.document.close()}
-async function sendPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===String(id));if(!p)return;if(!['Aprovada'].includes(String(p.status||''))){toast('Somente compras aprovadas podem gerar pedido');return}const sup=cache.suppliers.find(x=>String(x.id)===String(p.supplier_id));const email=sup?.order_email||sup?.email||'';if(!email){toast('Fornecedor não possui e-mail para pedidos cadastrado');return}if(!confirm(`Registrar que o Pedido ${p.order_number||''} foi enviado ao fornecedor ${email}?`))return;try{if(sb){const r=await sb.from('purchase_requests').update({status:'Pedido emitido',sent_to:email,sent_via:'email',sent_at:new Date().toISOString()}).eq('id',id);if(r.error)throw r.error;await refresh()}else Object.assign(p,{status:'Pedido emitido',sent_to:email,sent_via:'email',sent_at:new Date().toISOString()});closeModal();renderPurchases();toast(`Envio do Pedido ${p.order_number||''} registrado para ${email}`)}catch(e){console.error(e);toast('Não foi possível registrar o envio: '+(e.message||'erro'))}}
 async function connectGmail(){try{const r=await fetch(`${CONFIG.url}/functions/v1/gmail-oauth-start`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Não foi possível iniciar a conexão');window.open(d.authorization_url,'_blank');toast('Abrindo autorização do Gmail...')}catch(e){console.error(e);toast('Não foi possível conectar o Gmail: '+(e.message||'erro'))}}
 async function loadQuotes(){try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();renderQuotes();toast(d.inserted?`${d.inserted} nova(s) cotação(ões) recebida(s)`:'Gmail consultado. Nenhuma nova cotação encontrada.')}catch(e){console.error(e);toast('Não foi possível atualizar as cotações: '+(e.message||'erro'))}}
 function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Valor total:</b> ${money(q.total_value)}</p><hr><div style="white-space:pre-wrap;line-height:1.5">${esc(q.body_text||'Sem conteúdo registrado.')}</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
@@ -1483,7 +1612,7 @@ function editQuote(id){
   if(!q){toast('Cotação não encontrada');return}
   const suppliers=cache.suppliers.filter(s=>s.active!==false);
   const opts=suppliers.map(s=>`<option value="${esc(s.id)}" ${String(s.id)===String(q.supplier_id||'')?'selected':''}>${esc(s.name)}${s.order_email||s.email?' — '+esc(s.order_email||s.email):''}</option>`).join('');
-  const statuses=['Recebida','Aprovada','Rejeitada'];
+  const statuses=['Recebida','Rejeitada'];
   const statusOpts=statuses.map(st=>`<option value="${st}" ${String(q.status||'Recebida')===st?'selected':''}>${st}</option>`).join('');
   openModal(`<h2>✏️ Editar cotação</h2>
   <p class="muted" style="margin-top:-6px">Altere os dados da proposta recebida e salve no sistema.</p>
@@ -1509,7 +1638,7 @@ async function saveQuoteEdit(id){
   const total=Number(totalRaw);
   if(totalRaw===''||!Number.isFinite(total)||total<0){toast('Informe um valor válido');return}
   const supplierId=$('q_supplier')?.value||null;
-  const newStatus=$('q_status')?.value||'Recebida';
+  const newStatus=['Recebida','Rejeitada'].includes($('q_status')?.value)?$('q_status').value:'Recebida';
   const update={supplier_id:supplierId,total_value:total,status:newStatus};
   try{
     if(sb){
@@ -1639,7 +1768,7 @@ function purchaseProcess(id){
   <div class="grid" style="margin-top:10px"><div class="card panel"><h2>Conformidade <span class="badge ${complete?'ok':'warn'}">${done}/${checks.length}</span></h2>${checkRows}</div>
   <div class="card panel"><h2>Dados da compra</h2><p><b>Status:</b> <span class="badge info">${esc(p.status||'-')}</span></p><p><b>Valor:</b> ${money(p.total_value)}</p><p><b>Fornecedor atual:</b> ${esc(supName(p.supplier_id))}</p><div class="field"><label>Justificativa da compra</label><textarea id="pp_just" rows="3" style="width:100%;padding:10px;border:1px solid #d6dce5;border-radius:10px">${esc(p.purchase_justification||p.reason||'')}</textarea></div><div class="field"><label>Como foi feita a pesquisa de preços?</label><select id="pp_method"><option ${p.price_research_method==='Cotação com fornecedores'?'selected':''}>Cotação com fornecedores</option><option ${p.price_research_method==='Pesquisa em mercado'?'selected':''}>Pesquisa em mercado</option><option ${p.price_research_method==='Ata/contrato vigente'?'selected':''}>Ata/contrato vigente</option><option ${p.price_research_method==='Outra'?'selected':''}>Outra</option></select></div><div class="field"><label>Justificativa da escolha do fornecedor</label><textarea id="pp_selection" rows="3" style="width:100%;padding:10px;border:1px solid #d6dce5;border-radius:10px" placeholder="Ex.: menor preço entre as propostas válidas.">${esc(p.selection_justification||'')}</textarea></div><div class="field"><label>Observações de conformidade</label><textarea id="pp_notes" rows="3" style="width:100%;padding:10px;border:1px solid #d6dce5;border-radius:10px">${esc(p.compliance_notes||'')}</textarea></div></div></div>
   <div class="card panel" style="margin-top:16px"><h2>Fornecedores consultados</h2><div class="toolbar"><select id="pp_supplier" style="min-width:260px"><option value="">Selecione um fornecedor</option>${supOpts}</select><select id="pp_channel"><option>email</option><option>whatsapp</option><option>telefone</option><option>portal</option></select><button class="secondary" onclick="addConsultation('${id}')">+ Registrar consulta</button><button class="primary" onclick="sendQuoteRequests('${id}')">📨 Enviar solicitações por e-mail</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>Canal</th><th>Enviado</th><th>Resposta</th><th></th></tr></thead><tbody>${consultRows}</tbody></table></div></div>
-  <div class="card panel" style="margin-top:16px"><h2>Cotações recebidas</h2><p class="muted">Selecione a proposta e registre o aceite. Se não for a menor, a justificativa ficará gravada no processo.</p><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>Valor</th><th>Status</th><th>Recebida</th><th></th></tr></thead><tbody>${quotes.map(q=>`<tr><td>${esc(supName(q.supplier_id)||q.from_name||q.from_email||'-')}</td><td>${money(q.total_value)}</td><td><span class="badge ${q.status==='Aprovada'?'ok':'warn'}">${esc(q.status||'Recebida')}</span></td><td>${q.received_at?new Date(q.received_at).toLocaleString('pt-BR'):'-'}</td><td>${q.status==='Aprovada'?'<span class="badge ok">✅ Aceita</span>':Number(q.total_value||0)>0?`<button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${id}')">✅ Dar aceite</button>`:'<span class="muted">Sem valor</span>'}</td></tr>`).join('')||'<tr><td colspan="5">Nenhuma cotação recebida.</td></tr>'}</tbody></table></div></div>
+  <div class="card panel" style="margin-top:16px"><h2>Cotações recebidas</h2><p class="muted">Selecione a proposta e registre o aceite. Se não for a menor, a justificativa ficará gravada no processo.</p><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>Valor</th><th>Status</th><th>Recebida</th><th></th></tr></thead><tbody>${quotes.map(q=>`<tr><td>${esc(supName(q.supplier_id)||q.from_name||q.from_email||'-')}</td><td>${money(q.total_value)}</td><td><span class="badge ${q.status==='Aprovada'?'ok':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td>${q.received_at?new Date(q.received_at).toLocaleString('pt-BR'):'-'}</td><td>${q.status==='Aprovada'?'<span class="badge ok">✅ Aceita</span>':Number(q.total_value||0)>0?`<button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${id}')">✅ Dar aceite</button>`:'<span class="muted">Sem valor</span>'}</td></tr>`).join('')||'<tr><td colspan="5">Nenhuma cotação recebida.</td></tr>'}</tbody></table></div></div>
   <div class="card panel" style="margin-top:16px"><h2>Histórico de auditoria</h2>${logRows}</div>
   <div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button><button class="primary" onclick="savePurchaseProcess('${id}')">💾 Salvar processo</button>${pdfBtn}</div>`);
 }
@@ -1719,7 +1848,7 @@ async function sendQuoteRequestToSupplier(purchaseId,supplierId){
   return data;
 }
 async function sendQuoteRequests(purchaseId){
-  const consults=cache.consultations.filter(c=>String(c.purchase_id)===String(purchaseId)&&c.response_status!=='Respondida');
+  const consults=cache.consultations.filter(c=>String(c.purchase_id)===String(purchaseId)&&c.response_status==='Aguardando');
   if(!consults.length){toast('Não há fornecedores pendentes para envio');return}
   const eligible=consults.filter(c=>{const s=cache.suppliers.find(x=>String(x.id)===String(c.supplier_id));return !!(s?.order_email||s?.email)});
   if(!eligible.length){toast('Nenhum fornecedor pendente possui e-mail cadastrado');return}
@@ -1761,9 +1890,10 @@ function generatePurchaseProcessPDF(id){
   if(!checks.every(Boolean)){toast(`Processo incompleto: ${checks.filter(Boolean).length}/${checks.length}. Complete as pendências antes de gerar o documento.`);return}
   const supName=x=>cache.suppliers.find(s=>String(s.id)===String(x))?.name||'Não identificado';
   const {jsPDF}=window.jspdf||{};if(!jsPDF){toast('Gerador de PDF não carregou');return}const doc=new jsPDF();let y=18;const line=(txt,size=10)=>{doc.setFontSize(size);const lines=doc.splitTextToSize(String(txt||'-'),175);doc.text(lines,18,y);y+=lines.length*5+3;if(y>275){doc.addPage();y=18}};
-  line('PROCESSO DE COMPRA — HNSS',16);line(`Requisição: ${p.number}`);line(`Data: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'-'}`);line(`Status: ${p.status||'-'}`);line(`Valor: ${money(p.total_value)}`);line(`Fornecedor: ${supName(p.supplier_id)}`);line(`Justificativa: ${p.purchase_justification||p.reason||'-'}`);line(`Pesquisa de preços: ${p.price_research_method||'-'}`);line(`Justificativa da escolha: ${p.selection_justification||'-'}`);line(`Observações de conformidade: ${p.compliance_notes||'-'}`);line('');line('FORNECEDORES CONSULTADOS',12);consults.forEach(c=>line(`${supName(c.supplier_id)} | ${c.channel||'-'} | ${c.response_status||'-'} | ${c.sent_at?new Date(c.sent_at).toLocaleString('pt-BR'):'não enviado'}`));line('');line('COTAÇÕES RECEBIDAS',12);quotes.forEach(q=>line(`${supName(q.supplier_id)||q.from_name||q.from_email||'-'} | ${money(q.total_value)} | ${q.status||'Recebida'} | ${q.received_at?new Date(q.received_at).toLocaleString('pt-BR'):'-'}`));line('');line('CONFORMIDADE',12);line('Processo completo — 7/7 etapas configuradas concluídas.');line('');line('Documento gerado pelo Sistema de Compras HNSS.',9);doc.save(`processo_${p.number||id}.pdf`);toast('Processo gerado em PDF')}
+  line('PROCESSO DE COMPRA — HNSS',16);line(`Requisição: ${p.number}`);line(`Data: ${p.created_at?new Date(p.created_at).toLocaleString('pt-BR'):'-'}`);line(`Status: ${p.status||'-'}`);line(`Valor: ${money(p.total_value)}`);line(`Fornecedor: ${supName(p.supplier_id)}`);line(`Justificativa: ${p.purchase_justification||p.reason||'-'}`);line(`Pesquisa de preços: ${p.price_research_method||'-'}`);line(`Justificativa da escolha: ${p.selection_justification||'-'}`);line(`Observações de conformidade: ${p.compliance_notes||'-'}`);line('');line('FORNECEDORES CONSULTADOS',12);consults.forEach(c=>line(`${supName(c.supplier_id)} | ${c.channel||'-'} | ${c.response_status||'-'} | ${c.sent_at?new Date(c.sent_at).toLocaleString('pt-BR'):'não enviado'}`));line('');line('COTAÇÕES RECEBIDAS',12);quotes.forEach(q=>line(`${supName(q.supplier_id)||q.from_name||q.from_email||'-'} | ${money(q.total_value)} | ${quoteDisplayStatus(q)} | ${q.received_at?new Date(q.received_at).toLocaleString('pt-BR'):'-'}`));line('');line('CONFORMIDADE',12);line('Processo completo — 7/7 etapas configuradas concluídas.');line('');line('Documento gerado pelo Sistema de Compras HNSS.',9);doc.save(`processo_${p.number||id}.pdf`);toast('Processo gerado em PDF')}
 
 let reqSelection={};
+let reqSupplierSelection=[];
 let reqAutoMode=false;
 function renderReqRows(){
   const v=normalizeSearch($('reqSearch')?.value||'');
@@ -1777,7 +1907,7 @@ function renderReqRows(){
   const rows=list.map(i=>{
     const st=reqSelection[String(i.id)];
     const qty=st?.quantity||1;
-    return `<tr class="req-row" data-id="${esc(i.id)}"><td><input type="checkbox" class="req-check" data-id="${esc(i.id)}" ${st?'checked':''}></td><td>${esc(i.code||'')}</td><td>${esc(i.name)}</td><td>${Number(i.current_stock||0)} ${esc(i.unit||'')}</td><td><input class="req-qty" data-id="${esc(i.id)}" type="number" step="0.01" min="0" value="${qty}" style="width:110px" ${st?'':'disabled'}></td><td>${money(i.last_unit_price||0)}</td></tr>`
+    return `<tr class="req-row" data-id="${esc(i.id)}"><td><input type="checkbox" class="req-check" data-id="${esc(i.id)}" ${st?'checked':''}></td><td>${esc(i.code||'')}</td><td>${esc(i.name)}</td><td>${stockForOperational(i)===null?'Não sincronizado':Number(stockForOperational(i))+' '+esc(i.unit||'')}</td><td><input class="req-qty" data-id="${esc(i.id)}" type="number" step="0.01" min="0" value="${qty}" style="width:110px" ${st?'':'disabled'}></td><td>${money(i.last_unit_price||0)}</td></tr>`
   }).join('');
   $('reqItemsTable').querySelector('tbody').innerHTML=rows||'<tr><td colspan="6">Nenhum item encontrado. Digite parte do código ou nome.</td></tr>';
   document.querySelectorAll('.req-check').forEach(ch=>ch.onchange=()=>{
@@ -1791,18 +1921,38 @@ function renderReqRows(){
   });
 }
 function purchaseForm(auto=false){
-  reqSelection={}; reqAutoMode=auto;
+  reqSelection={}; reqSupplierSelection=[]; reqAutoMode=auto;
   if(auto)(cache.items||[]).filter(i=>status(i)[1]!=='ok').forEach(i=>{reqSelection[String(i.id)]={quantity:suggestedQty(i)}});
   const suppliers=cache.suppliers.filter(s=>s.active!==false).map(s=>{const d=SUPPLIER_DIRECTORY.find(x=>String(x.name||'').trim().toLowerCase()===String(s.name||'').trim().toLowerCase());return {...s,_dir:d,_distance:d?supplierDistanceKm(d):1200,_verified:!!d?.verified,_logistics:Number(d?.logisticsScore||0)}}).sort((a,b)=>a._distance-b._distance||Number(b._verified)-Number(a._verified)||b._logistics-a._logistics||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const opts=suppliers.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} · ${s._distance<1200?'≈ '+s._distance+' km':''}${s.order_email||s.email?' — '+esc(s.order_email||s.email):''}</option>`).join('');
-  openModal(`<h2>${auto?'Sugestão automática de compra':'Nova requisição de compra'}</h2><div class="field"><label>Fornecedor <span class="muted">(priorizado por proximidade, logística e site verificado)</span></label><select id="p_supplier" required><option value="">Selecione o fornecedor</option>${opts}</select>${suppliers.length?`<div class="muted" style="margin-top:6px">${suppliers.length} fornecedor(es) disponíveis para esta compra.</div>`:'<div class="muted" style="margin-top:6px">Cadastre primeiro um fornecedor em Fornecedores.</div>'}</div><div class="field"><label>Justificativa</label><input id="p_reason" value="Reposição de estoque"></div><div class="field"><label>Observação</label><input id="p_note" placeholder="Observação da requisição"></div><div class="toolbar"><input id="reqSearch" placeholder="Buscar item por código ou nome..." oninput="filterReqItems()"></div><p class="muted" style="margin:6px 0">Digite o código ou nome para localizar rapidamente. Os itens selecionados permanecem na lista.</p><div class="table-wrap" style="max-height:58vh"><table class="table" id="reqItemsTable"><thead><tr><th>✓</th><th>Código</th><th>Item</th><th>Estoque</th><th>Qtd.</th><th>Preço</th></tr></thead><tbody></tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPurchase()">Criar requisição</button></div>`);
+  openModal(`<h2>${auto?'Sugestão automática de compra':'Nova requisição de compra'}</h2><div class="field"><label>Fornecedores para cotação <span class="muted">(adicione um fornecedor por vez)</span></label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="p_supplier" style="flex:1;min-width:240px"><option value="">Selecione o fornecedor</option>${opts}</select><button type="button" class="secondary" onclick="addReqSupplier()">+ Adicionar</button></div><div id="reqSupplierSelected" style="margin-top:10px"></div>${suppliers.length?`<div class="muted" style="margin-top:6px">${suppliers.length} fornecedor(es) disponíveis. Selecione um, clique em Adicionar e depois escolha o próximo.</div>`:'<div class="muted" style="margin-top:6px">Cadastre primeiro um fornecedor em Fornecedores.</div>'}</div><div class="field"><label>Justificativa</label><input id="p_reason" value="Reposição de estoque"></div><div class="field"><label>Observação</label><input id="p_note" placeholder="Observação da requisição"></div><div class="toolbar"><input id="reqSearch" placeholder="Buscar item por código ou nome..." oninput="filterReqItems()"></div><p class="muted" style="margin:6px 0">Digite o código ou nome para localizar rapidamente. Os itens selecionados permanecem na lista.</p><div class="table-wrap" style="max-height:58vh"><table class="table" id="reqItemsTable"><thead><tr><th>✓</th><th>Código</th><th>Item</th><th>Estoque</th><th>Qtd.</th><th>Preço</th></tr></thead><tbody></tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPurchase()">Criar requisição</button></div>`);
   renderReqRows();
+  renderReqSupplierSelection();
+}
+function renderReqSupplierSelection(){
+  const box=$('reqSupplierSelected'); if(!box)return;
+  if(!reqSupplierSelection.length){box.innerHTML='<div class="muted">Nenhum fornecedor adicionado.</div>';return}
+  box.innerHTML=`<div style="font-weight:700;margin-bottom:6px">${reqSupplierSelection.length} fornecedor(es) selecionado(s)</div><div style="display:flex;gap:6px;flex-wrap:wrap">${reqSupplierSelection.map(id=>{const sp=cache.suppliers.find(x=>String(x.id)===String(id));return `<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:999px;padding:6px 10px;background:#f8fafc">${esc(sp?.name||id)} <button type="button" title="Remover" onclick="removeReqSupplier('${esc(id)}')" style="border:0;background:transparent;cursor:pointer;font-weight:800">×</button></span>`}).join('')}</div>`;
+}
+function addReqSupplier(){
+  const el=$('p_supplier'); const id=el?.value||'';
+  if(!id){toast('Selecione um fornecedor');return}
+  if(reqSupplierSelection.includes(id)){toast('Este fornecedor já foi adicionado');return}
+  reqSupplierSelection.push(id); el.value=''; renderReqSupplierSelection();
+}
+function removeReqSupplier(id){
+  reqSupplierSelection=reqSupplierSelection.filter(x=>String(x)!==String(id));
+  renderReqSupplierSelection();
 }
 function filterReqItems(){renderReqRows()}
 async function createPurchase(){
   if(purchaseSaveBusy){toast('Já existe uma operação de compra em andamento');return}
-  const supplierId=$('p_supplier')?.value||'';
-  if(!supplierId){toast('Selecione o fornecedor');return}
+  const supplierEl=$('p_supplier');
+  const pendingSupplierId=supplierEl?.value||'';
+  if(pendingSupplierId&&!reqSupplierSelection.includes(pendingSupplierId))reqSupplierSelection.push(pendingSupplierId);
+  const supplierIds=[...reqSupplierSelection];
+  if(!supplierIds.length){toast('Adicione pelo menos um fornecedor');return}
+  const supplierId=supplierIds[0]; // fornecedor principal para compatibilidade com pedido/aprovação
   const selected=Object.entries(reqSelection).map(([id,st])=>{const item=cache.items.find(i=>String(i.id)===String(id));return {item,quantity:Number(st?.quantity||0)}}).filter(x=>x.item&&Number.isFinite(x.quantity)&&x.quantity>0);
   if(!selected.length){toast('Selecione pelo menos um item e informe as quantidades');return}
   const total=selected.reduce((sum,x)=>sum+x.quantity*Number(x.item.last_unit_price||0),0);
@@ -1817,8 +1967,9 @@ async function createPurchase(){
       const ri=selected.map(x=>({request_id:r.data.id,item_id:x.item.id,quantity:x.quantity,unit_price:Number(x.item.last_unit_price||0)}));
       const r2=await sb.from('purchase_request_items').insert(ri);
       if(r2.error){await sb.from('purchase_requests').delete().eq('id',r.data.id);throw r2.error}
-      const c=await sb.from('purchase_supplier_consultations').insert({purchase_id:r.data.id,supplier_id:supplierId,channel:'email',response_status:'Aguardando'});
-      if(c.error){console.warn('Consulta inicial não registrada:',c.error);}
+      const consultationPayload=supplierIds.map(sid=>({purchase_id:r.data.id,supplier_id:sid,channel:'email',response_status:'Aguardando'}));
+      const c=await sb.from('purchase_supplier_consultations').insert(consultationPayload);
+      if(c.error){console.warn('Consultas iniciais não registradas:',c.error);}
       await refresh();
     }else{
       const id=Date.now();
@@ -1826,36 +1977,21 @@ async function createPurchase(){
       cache.purchases.unshift(created);
       cache.requestItems.push(...selected.map(x=>({id:Date.now()+Math.random(),request_id:id,item_id:x.item.id,quantity:x.quantity,unit_price:Number(x.item.last_unit_price||0),total:x.quantity*Number(x.item.last_unit_price||0)})));
     }
-    closeModal();renderPurchases();toast('Requisição criada com sucesso');
+    closeModal();renderPurchases();toast(`Requisição criada para ${supplierIds.length} fornecedor(es). Use “Enviar propostas” para disparar a cotação.`);
   }catch(e){console.error(e);toast('Não foi possível criar a compra: '+(e.message||'erro'))}
   finally{purchaseSaveBusy=false;if(btn){btn.disabled=false;btn.textContent='Criar requisição'}}
 }
-function exportCSV(){let h=['Código','Item','Unidade','Estoque','Mínimo','Máximo','Ponto de pedido','Consumo 30d','Consumo 90d','Preço'];let r=cache.items.map(i=>[i.code,i.name,i.unit,i.current_stock,i.min_stock,i.max_stock,i.reorder_point,i.consumption_30d,i.consumption_90d,i.last_unit_price]);let csv=[h,...r].map(x=>x.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='estoque_hospitalar.csv';a.click()}
+function exportCSV(){let h=['Código','Item','Unidade','Estoque','Mínimo','Máximo','Ponto de pedido','Consumo 30d','Consumo 90d','Preço'];let r=cache.items.map(i=>[i.code,i.name,i.unit,stockForOperational(i)??'',i.min_stock,i.max_stock,i.reorder_point,i.consumption_30d,i.consumption_90d,i.last_unit_price]);let csv=[h,...r].map(x=>x.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='estoque_hospitalar.csv';a.click()}
 $('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};boot();
 
 async function approvePurchase(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
   if(!p){toast('Requisição não encontrada');return}
-  if(['Aprovada','Pedido emitido','Confirmado','Recebida'].includes(p.status||'')){toast('Esta compra já está aprovada');return}
-  const quoteCount=cache.quotes.filter(q=>String(q.purchase_id)===String(id)&&Number(q.total_value||0)>0).length;
-  if(quoteCount>0){toast('Há cotações válidas para esta requisição. Use “Comparar” e dê o aceite da cotação escolhida.');return}
-  const reason=prompt('Observação da aprovação:','Compra aprovada após análise das cotações.')||'';
-  const approvedAt=new Date().toISOString();
-  const approval={status:'Aprovada',approval_status:'Aprovada',approved_by:session?.user?.id||null,approved_at:approvedAt,approval_note:reason};
-  try{
-    if(sb){
-      const r=await sb.from('purchase_requests').update(approval).eq('id',id);
-      if(r.error)throw r.error;
-      const ar=await sb.from('purchase_audit_log').insert({purchase_id:id,entity_type:'aprovação',entity_id:String(id),action:'Compra aprovada',changed_by:session?.user?.id||null,old_data:{status:p.status,approved_by:p.approved_by,approved_at:p.approved_at},new_data:{status:'Aprovada',approved_by:session?.user?.id||null,approved_at:approvedAt,approval_note:reason}});
-      if(ar.error)console.warn('Auditoria da aprovação não foi gravada:',ar.error);
-      Object.assign(p,approval);
-      await refresh();
-    }else Object.assign(p,approval);
-    renderPurchases();
-    toast('Compra aprovada com sucesso');
-  }catch(e){console.error(e);toast('Não foi possível aprovar: '+(e.message||'erro'))}
+  if(persistedApproval(id)){toast('Esta compra já possui aprovação formal');return}
+  const valid=cache.quotes.filter(q=>String(q.purchase_id)===String(id)&&Number(q.total_value||0)>0);
+  if(!valid.length){toast('Aprovação bloqueada: registre ao menos uma cotação válida e use “Comparar” para dar o aceite.');return}
+  compareQuotes(id);
 }
-
 function renderReceiving(){
   const eligible=cache.purchases.filter(p=>isReceivingStatus(p.status));
   const rows=eligible.map(p=>{
@@ -1866,7 +2002,7 @@ function renderReceiving(){
     return `<tr><td>${esc(p.order_number||'-')}</td><td>${esc(p.number||'-')}</td><td>${esc(sup?.name||'-')}</td><td>${money(p.total_value)}</td><td><span class="badge warn">${esc(p.status||'-')}</span></td><td>${esc(p.invoice_number||d.invoice_number||'-')}</td><td>${last?.changed_at?new Date(last.changed_at).toLocaleString('pt-BR'):'-'}</td><td><button class="primary" onclick="openReceiving('${p.id}')">📦 Receber + NF</button>${recs.length?` <button class="secondary" onclick="viewReceivingHistory('${p.id}')">👁 Histórico</button>`:''}</td></tr>`;
   }).join('');
   const history=cache.audit.filter(a=>String(a.entity_type)==='recebimento').sort((a,b)=>new Date(b.changed_at)-new Date(a.changed_at)).slice(0,30).map(a=>{const p=cache.purchases.find(x=>String(x.id)===String(a.purchase_id));const d=a.new_data||{};return `<tr><td>${esc(p?.order_number||p?.number||'-')}</td><td>${esc(d.invoice_number||'-')}</td><td>${d.invoice_date?new Date(d.invoice_date+'T00:00:00').toLocaleDateString('pt-BR'):'-'}</td><td>${money(d.received_value||0)}</td><td>${esc(d.complete?'Total':'Parcial')}</td><td>${a.changed_at?new Date(a.changed_at).toLocaleString('pt-BR'):'-'}</td></tr>`}).join('');
-  $('page-recebimento').innerHTML=`<div class="card panel"><div class="toolbar"><button class="secondary" onclick="go('compras')">🛒 Voltar para Compras</button><button class="primary" onclick="refresh().then(()=>renderReceiving())">🔄 Atualizar</button></div><h2>📥 Recebimento + Nota Fiscal</h2><p class="muted">Registre a entrada física, a NF, as quantidades recebidas e acompanhe o histórico. A quantidade recebida é adicionada ao estoque.</p><h3 style="margin-top:18px">Pedidos para receber</h3><div class="table-wrap"><table class="table"><thead><tr><th>Pedido</th><th>REQ</th><th>Fornecedor</th><th>Valor</th><th>Status</th><th>NF</th><th>Último registro</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan="8" style="padding:22px;text-align:center">Nenhum pedido liberado para recebimento. O pedido precisa estar em status Pedido emitido ou Confirmado.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">Histórico de Notas Fiscais e recebimentos</h3><div class="table-wrap"><table class="table"><thead><tr><th>Pedido</th><th>NF</th><th>Data NF</th><th>Valor NF</th><th>Tipo</th><th>Registrado em</th></tr></thead><tbody>${history||'<tr><td colspan="6" style="padding:22px;text-align:center">Nenhum recebimento registrado.</td></tr>'}</tbody></table></div></div>`;
+  $('page-recebimento').innerHTML=`<div class="card panel"><div class="toolbar"><button class="secondary" onclick="go('compras')">🛒 Voltar para Compras</button><button class="primary" onclick="refresh().then(()=>renderReceiving())">🔄 Atualizar</button></div><h2>📥 Recebimento + Nota Fiscal</h2><p class="muted">Registre a entrada física, a NF e as quantidades recebidas. O saldo operacional por centro continua sendo o SAVE e será atualizado na próxima importação/sincronização.</p><h3 style="margin-top:18px">Pedidos para receber</h3><div class="table-wrap"><table class="table"><thead><tr><th>Pedido</th><th>REQ</th><th>Fornecedor</th><th>Valor</th><th>Status</th><th>NF</th><th>Último registro</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan="8" style="padding:22px;text-align:center">Nenhum pedido liberado para recebimento. O pedido precisa estar em status Pedido emitido, Enviado ao fornecedor ou Confirmado.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">Histórico de Notas Fiscais e recebimentos</h3><div class="table-wrap"><table class="table"><thead><tr><th>Pedido</th><th>NF</th><th>Data NF</th><th>Valor NF</th><th>Tipo</th><th>Registrado em</th></tr></thead><tbody>${history||'<tr><td colspan="6" style="padding:22px;text-align:center">Nenhum recebimento registrado.</td></tr>'}</tbody></table></div></div>`;
 }
 function viewReceivingHistory(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
@@ -1877,7 +2013,7 @@ function viewReceivingHistory(id){
 async function openReceiving(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
   if(!p){toast('Pedido não encontrado');return}
-  if(!['Pedido emitido','Confirmado'].includes(p.status||'')){toast('Este pedido ainda não está liberado para recebimento ou já foi totalmente recebido');return}
+  if(!['Pedido emitido','Enviado ao fornecedor','Confirmado'].includes(p.status||'')){toast('Este pedido ainda não está liberado para recebimento ou já foi totalmente recebido');return}
   const items=cache.requestItems.filter(x=>String(x.request_id)===String(id));
   const previousReceipts=cache.receiptItems||[];
   const receivedByItem={};
@@ -1904,7 +2040,7 @@ async function openReceiving(id){
 }
 
 function normalizeInvoiceNumber(v){return String(v||'').trim().replace(/\s+/g,' ').toUpperCase();}
-function isReceivingStatus(status){return ['Pedido emitido','Confirmado'].includes(String(status||''));}
+function isReceivingStatus(status){return ['Pedido emitido','Enviado ao fornecedor','Confirmado'].includes(String(status||''));}
 function receivingStatusMessage(status){if(status==='Aprovada')return 'Pedido aprovado, mas ainda não enviado ao fornecedor. Envie o pedido para liberar o recebimento.';if(status==='Aguardando envio')return 'Aguardando envio ao fornecedor.';if(status==='Enviado ao fornecedor')return 'Pedido enviado. Aguarde a confirmação/retorno do fornecedor.';if(status==='Recebida')return 'Pedido já recebido e concluído.';return 'O pedido precisa estar como “Pedido emitido” ou “Confirmado” para receber a NF.';}
 async function saveReceiving(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
@@ -1970,7 +2106,7 @@ async function saveReceiving(id){
     renderPurchases();
     renderReceiving();
     const result=data||{};
-    toast(result.has_rejected?'Recebimento registrado com divergência — estoque recebeu apenas os itens aceitos':(result.complete?'Recebimento concluído — estoque atualizado e pedido marcado como Recebida':'Recebimento parcial registrado — estoque atualizado'));
+    toast(result.has_rejected?'Recebimento registrado com divergência. Itens rejeitados permanecem pendentes.':(result.complete?'Recebimento concluído. Pedido marcado como Recebida; sincronize o SAVE para atualizar o saldo por centro.':'Recebimento parcial registrado. Sincronize o SAVE após a entrada no sistema hospitalar.'));
   }catch(e){
     console.error(e);
     toast('Não foi possível registrar o recebimento: '+(e.message||'erro'));
@@ -1996,12 +2132,136 @@ function purchaseApprovalView(id){
 </script><script>
 function intelNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function intelMoney(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(intelNum(v))}
-function intelDays(item){const c30=intelNum(item.consumption_30d);return c30>0?Math.max(0,intelNum(item.current_stock)/ (c30/30)):null}
-function intelPriority(item){const stock=intelNum(item.current_stock), min=intelNum(item.min_stock), pp=intelNum(item.reorder_point), c30=intelNum(item.consumption_30d); if(stock<=0)return ['Urgente',4]; if(min>0&&stock<min)return ['Alta',3]; if(pp>0&&stock<=pp)return ['Alta',3]; if(c30>0&&intelDays(item)!==null&&intelDays(item)<15)return ['Média',2]; return ['Programar',1]}
-function buildIntelRows(){return (cache.items||[]).map(i=>{const [priority,score]=intelPriority(i);const stock=intelNum(i.current_stock),max=intelNum(i.max_stock),pp=intelNum(i.reorder_point),c30=intelNum(i.consumption_30d),on=intelNum(i.on_order_qty);let target=max>0?max:(pp>0?pp*2:Math.ceil(c30));let suggested=Math.max(0,target-stock-on);const lot=Math.max(1,intelNum(i.lot_size)||1);if(suggested>0)suggested=Math.ceil(suggested/lot)*lot;return {...i,priority,score,days:intelDays(i),suggested,on,target,value:suggested*intelNum(i.last_unit_price)}}).filter(x=>x.suggested>0).sort((a,b)=>b.score-a.score||((a.days??999)-(b.days??999))||b.value-a.value)}
-function renderInteligencia(){const rows=buildIntelRows();const urgent=rows.filter(x=>x.priority==='Urgente').length;const high=rows.filter(x=>x.priority==='Alta').length;const total=rows.reduce((a,x)=>a+x.value,0);const covered=rows.filter(x=>x.days!==null&&x.days<15).length;let html=`<div class="intel-hero"><div style="font-size:13px;opacity:.85;font-weight:700">PLANEJAMENTO AVANÇADO</div><h2 style="margin:5px 0 8px">Inteligência de Compras</h2><div style="opacity:.9">Priorize reposições usando estoque, consumo, ponto de pedido, estoque máximo, lote e compras em andamento.</div></div><div class="intel-grid"><div class="intel-kpi"><div class="muted">Itens para reposição</div><div class="v">${rows.length}</div></div><div class="intel-kpi"><div class="muted">Urgentes</div><div class="v">${urgent}</div></div><div class="intel-kpi"><div class="muted">Prioridade alta</div><div class="v">${high}</div></div><div class="intel-kpi"><div class="muted">Valor estimado</div><div class="v" style="font-size:22px">${intelMoney(total)}</div></div></div><div class="card" style="padding:18px;margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Recomendações de compra</h3><div class="muted">${covered} itens com cobertura inferior a 15 dias.</div></div><div class="intel-actions"><button class="secondary" onclick="go('estoque')">Ver estoque</button><button class="primary" onclick="intelCreateReq()">Criar requisição</button></div></div></div>`;
-if(!rows.length){html+=`<div class="card" style="padding:24px"><h3>Nenhuma reposição sugerida</h3><div class="muted">Com os parâmetros atuais, não há itens com quantidade positiva recomendada.</div></div>`;$('page-inteligencia').innerHTML=html;return}
-html+=`<div class="intel-table"><table><thead><tr><th>Prioridade</th><th>Produto</th><th>Estoque</th><th>Consumo 30d</th><th>Cobertura</th><th>Em compra</th><th>Sugerido</th><th>Valor</th></tr></thead><tbody>${rows.slice(0,150).map(x=>`<tr><td><span class="badge">${esc(x.priority)}</span></td><td><strong>${esc(x.name||'')}</strong><div class="muted" style="font-size:11px">${esc(x.code||'')}</div></td><td>${intelNum(x.current_stock)}</td><td>${intelNum(x.consumption_30d)}</td><td>${x.days===null?'—':Math.round(x.days)+' dias'}</td><td>${intelNum(x.on_order_qty)}</td><td><strong>${intelNum(x.suggested)}</strong></td><td>${intelMoney(x.value)}</td></tr>`).join('')}</tbody></table></div>`;$('page-inteligencia').innerHTML=html}
+let intelCenterFilter='PRINCIPAL';
+function purchaseCenterFor(i){
+  const pref=String(i.purchase_stock_center||'').toUpperCase();
+  if(pref==='FARMÁCIA'||pref==='ALMOXARIFADO'||pref==='TOTAL')return pref;
+  const c=centerStocksFor(i.id);
+  if(c.farm!==0&&c.alm===0)return 'FARMÁCIA';
+  if(c.alm!==0&&c.farm===0)return 'ALMOXARIFADO';
+  return 'TOTAL';
+}
+function intelStockStatus(i,filter=intelCenterFilter){
+  const rows=(cache.stockCenters||[]).filter(sc=>String(sc.item_id)===String(i.id));
+  const center=filter==='PRINCIPAL'?purchaseCenterFor(i):filter;
+  const farm=rows.some(sc=>String(sc.cost_center||'').toUpperCase()==='FARMÁCIA');
+  const alm=rows.some(sc=>String(sc.cost_center||'').toUpperCase()==='ALMOXARIFADO');
+  const synced=center==='FARMÁCIA'?farm:center==='ALMOXARIFADO'?alm:(farm||alm);
+  return {center,farm,alm,synced};
+}
+function stockForIntel(i,filter=intelCenterFilter){
+  const c=centerStocksFor(i.id),st=intelStockStatus(i,filter);
+  if(!st.synced)return null;
+  return st.center==='FARMÁCIA'?c.farm:st.center==='ALMOXARIFADO'?c.alm:c.total;
+}
+function intelCenterLabel(i){return purchaseCenterFor(i)}
+function setIntelCenter(v){intelCenterFilter=v;renderInteligencia()}
+
+function intelUnsyncedItems(){
+  return (cache.items||[]).filter(i=>stockForIntel(i)===null)
+}
+function showConversionPending(){const arr=(cache.items||[]).filter(i=>stockForIntel(i)!==null&&!intelConsumptionConversion(i).ok&&intelNum(i.consumption_30d)>0);const rows=arr.map(i=>`<tr><td>${esc(i.code||'')}</td><td>${esc(i.name||'')}</td><td>${esc(i.consumption_unit||'—')}</td><td>${intelNum(i.consumption_30d)}</td><td><button class="secondary" onclick="closeModal();openItem('${i.id}')">Informar conversão</button></td></tr>`).join('');openModal(`<h2>Conversões pendentes</h2><p class="muted">Validação obrigatória para todas as unidades. Informe quantas unidades de consumo do SAVE correspondem a 1 unidade de estoque/compra. Para equivalência direta, informe fator 1.</p><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Unid. SAVE</th><th>Consumo 30d</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5">Nenhuma conversão pendente.</td></tr>'}</tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
+function showIntelUnsynced(){
+  const rows=intelUnsyncedItems();
+  openModal(`<h2>Produtos não presentes no SAVE</h2>
+    <div class="muted" style="margin-bottom:12px">Estes produtos existem no cadastro HNSS, mas não possuem saldo sincronizado no centro/filtro atual. Eles não participam das sugestões automáticas de compra.</div>
+    <div style="max-height:55vh;overflow:auto"><table><thead><tr><th>Código</th><th>Produto</th><th>Un.</th><th>Estoque legado</th></tr></thead><tbody>
+    ${rows.slice(0,1000).map(i=>`<tr><td>${esc(i.code||'-')}</td><td>${esc(i.name||'-')}</td><td>${esc(i.unit||'-')}</td><td>${intelNum(i.current_stock)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="muted" style="margin-top:10px">${rows.length} produto(s) fora do universo sincronizado neste filtro.</div>
+    <div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)
+}
+
+
+function intelConsumptionConversion(i){
+ const u=String(i.consumption_unit||'').trim().toUpperCase();
+ const stockU=String(i.unit||'').trim().toUpperCase();
+ const factor=Number(i.consumption_units_per_stock_unit||0);
+ const verified=!!i.consumption_conversion_verified_at;
+ // 6.1.22: nenhuma unidade, inclusive UN/UND, entra automaticamente.
+ // É obrigatório existir fator positivo salvo e validação explícita.
+ if(factor>0 && verified)return {ok:true,unit:u||'—',stockUnit:stockU||'—',factor,reason:'Conversão validada'};
+ if(factor>0 && !verified)return {ok:false,unit:u||'—',stockUnit:stockU||'—',factor:null,reason:'Fator existente sem validação'};
+ return {ok:false,unit:u||'—',stockUnit:stockU||'—',factor:null,reason:'Conversão não validada'};
+}
+function intelC30StockUnits(i){const cv=intelConsumptionConversion(i);return cv.ok?intelNum(i.consumption_30d)/cv.factor:null}
+function intelDays(item){const c30=intelC30StockUnits(item),stock=stockForIntel(item);if(stock===null||c30===null)return null;return c30>0?Math.max(0,stock/(c30/30)):null}
+function intelPriority(item){const stock=stockForIntel(item),cv=intelConsumptionConversion(item);if(stock===null)return ['Não sincronizado',0];if(!cv.ok)return ['Conversão pendente',0];const min=intelNum(item.min_stock),pp=intelNum(item.reorder_point),c30=intelC30StockUnits(item);if(stock<=0)return ['Urgente',4];if(min>0&&stock<min)return ['Alta',3];if(pp>0&&stock<=pp)return ['Alta',3];if(c30>0&&intelDays(item)!==null&&intelDays(item)<15)return ['Média',2];return ['Programar',1]}
+function intelABCMap(){
+  const center=intelCenterFilter==='PRINCIPAL'?'PRINCIPAL':intelCenterFilter;
+  const m=new Map();
+  abcRows('valor_consumo',center).forEach(x=>m.set(x.id,x.abc));
+  return m;
+}
+function buildIntelRows(){const abcMap=intelABCMap();return (cache.items||[]).map(i=>{const cv=intelConsumptionConversion(i),[priority,score]=intelPriority(i),stock=stockForIntel(i),center=intelCenterFilter==='PRINCIPAL'?purchaseCenterFor(i):intelCenterFilter,synced=stock!==null,max=intelNum(i.max_stock),pp=intelNum(i.reorder_point),c30=intelC30StockUnits(i),on=intelNum(i.on_order_qty),abc=abcMap.get(i.id)||'—';let target=(cv.ok&&c30!==null)?(max>0?max:(pp>0?pp*2:Math.ceil(c30))):0;let suggested=(synced&&cv.ok)?Math.max(0,target-stock-on):0;const lot=Math.max(1,intelNum(i.lot_size)||1);if(suggested>0)suggested=Math.ceil(suggested/lot)*lot;const abcRank=abc==='A'?3:abc==='B'?2:abc==='C'?1:0;return {...i,priority,score,abc,abcRank,days:intelDays(i),stockCenter:center,intelStock:stock,synced,conversion:cv,c30Stock:c30,suggested,on,target,value:suggested*intelNum(i.last_unit_price)}}).filter(x=>x.suggested>0).sort((a,b)=>b.abcRank-a.abcRank||b.score-a.score||((a.days??999)-(b.days??999))||b.value-a.value)}
+function renderInteligencia(){const allItems=(cache.items||[]),unsynced=allItems.filter(i=>stockForIntel(i)===null),conversionPending=allItems.filter(i=>stockForIntel(i)!==null&&!intelConsumptionConversion(i).ok&&intelNum(i.consumption_30d)>0),rows=buildIntelRows(),urgent=rows.filter(x=>x.priority==='Urgente').length,high=rows.filter(x=>x.priority==='Alta').length,abcA=rows.filter(x=>x.abc==='A').length,total=rows.reduce((a,x)=>a+x.value,0),covered=rows.filter(x=>x.days!==null&&x.days<15).length;let html=`<div class="intel-hero"><div style="font-size:13px;opacity:.85;font-weight:700">PLANEJAMENTO AVANÇADO</div><h2 style="margin:5px 0 8px">Inteligência de Compras</h2><div style="opacity:.9">Reposição calculada com o saldo do centro selecionado e integrada à Curva ABC por valor de consumo. Itens A aparecem primeiro, sem alterar automaticamente a quantidade sugerida.</div></div><div class="card" style="padding:14px;margin-bottom:16px"><b>Estoque usado no cálculo:</b> <select onchange="setIntelCenter(this.value)" style="margin-left:8px;padding:8px"><option value="PRINCIPAL" ${intelCenterFilter==='PRINCIPAL'?'selected':''}>Centro principal de cada produto</option><option value="FARMÁCIA" ${intelCenterFilter==='FARMÁCIA'?'selected':''}>Somente Farmácia</option><option value="ALMOXARIFADO" ${intelCenterFilter==='ALMOXARIFADO'?'selected':''}>Somente Almoxarifado</option><option value="TOTAL" ${intelCenterFilter==='TOTAL'?'selected':''}>Total consolidado</option></select><div class="muted" style="margin-top:6px">Produtos existentes nos dois centros foram inicialmente classificados como TOTAL e podem ser ajustados individualmente no cadastro do item.</div>${unsynced.length?`<div style="margin-top:10px;padding:10px;border:1px solid #f0b429;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>⚠ ${unsynced.length} produto(s) não presentes no universo SAVE deste filtro.</b><div class="muted">Eles ficam fora das sugestões automáticas; ausência no relatório não é tratada como saldo zero.</div></div><button class="secondary" onclick="showIntelUnsynced()">Ver produtos</button></div>`:''}${conversionPending.length?`<div style="margin-top:10px;padding:10px;border:1px solid #d97706;border-radius:8px"><b>🧪 ${conversionPending.length} produto(s) bloqueados por conversão de unidade.</b><div class="muted">Nenhum consumo entra na compra automática sem fator e validação explícita, inclusive UN/UND. Isso evita interpretar UI, doses ou outras unidades clínicas como unidade de compra.</div><button class="secondary" style="margin-top:7px" onclick="showConversionPending()">Resolver conversões</button></div>`:''}</div><div class="intel-grid"><div class="intel-kpi"><div class="muted">Itens para reposição</div><div class="v">${rows.length}</div></div><div class="intel-kpi"><div class="muted">Produtos sincronizados</div><div class="v">${allItems.length-unsynced.length}</div></div><div class="intel-kpi"><div class="muted">Classe A para reposição</div><div class="v">${abcA}</div></div><div class="intel-kpi"><div class="muted">Urgentes</div><div class="v">${urgent}</div></div><div class="intel-kpi"><div class="muted">Prioridade alta</div><div class="v">${high}</div></div><div class="intel-kpi"><div class="muted">Valor estimado</div><div class="v" style="font-size:22px">${intelMoney(total)}</div></div></div><div class="card" style="padding:18px;margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Recomendações de compra</h3><div class="muted">${covered} itens com cobertura inferior a 15 dias.</div></div><div class="intel-actions"><button class="secondary" onclick="document.getElementById('saveConsumptionFile').click()">📊 Importar consumo SAVE</button><input id="saveConsumptionFile" type="file" accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveConsumptionFile(this.files[0]);this.value=''"><button class="secondary" onclick="go('estoque')">Ver estoque</button><button class="primary" onclick="intelCreateReq()">Criar requisição</button></div></div></div>`;
+if(!rows.length)html+=`<div class="card" style="padding:24px"><h3>Nenhuma reposição sugerida</h3><div class="muted">Entre os produtos sincronizados pelo SAVE, os parâmetros atuais não indicam necessidade de compra para este filtro.</div></div>`;
+else html+=`<div class="intel-table"><table><thead><tr><th>ABC</th><th>Prioridade</th><th>Produto</th><th>Centro</th><th>Estoque usado</th><th>Consumo 30d</th><th>Cobertura</th><th>Em compra</th><th>Sugerido</th><th>Valor</th></tr></thead><tbody>${rows.slice(0,150).map(x=>`<tr><td><span class="badge">${esc(x.priority)}</span></td><td><strong>${esc(x.name||'')}</strong><div class="muted" style="font-size:11px">${esc(x.code||'')}</div></td><td>${esc(x.stockCenter)}</td><td><strong>${intelNum(x.intelStock)}</strong></td><td>${x.c30Stock===null?'—':intelNum(x.c30Stock)}<div class="muted" style="font-size:10px">${esc(x.consumption_unit||'')} ${x.conversion?.factor&&x.conversion.factor!==1?'÷ '+intelNum(x.conversion.factor):''}</div></td><td>${x.days===null?'—':Math.round(x.days)+' dias'}</td><td>${intelNum(x.on_order_qty)}</td><td><strong>${intelNum(x.suggested)}</strong></td><td>${intelMoney(x.value)}</td></tr>`).join('')}</tbody></table></div>`;$('page-inteligencia').innerHTML=html}
+
+
+let pendingSaveConsumptionImport=null;
+function parseSaveDateBR(v){
+  const m=String(v||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return m?`${m[3]}-${m[2]}-${m[1]}`:null;
+}
+function daysInclusive(a,b){
+  const x=new Date(a+'T12:00:00'),y=new Date(b+'T12:00:00');
+  return Math.round((y-x)/86400000)+1;
+}
+async function previewSaveConsumptionFile(file){
+  if(!file)return;
+  try{
+    const buf=await file.arrayBuffer();let text;
+    try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
+    const pm=text.match(/Per[íi]odo:\s*(\d{2}\/\d{2}\/\d{4})\s*[àa]\s*(\d{2}\/\d{2}\/\d{4})/i);
+    if(!pm){toast('Não consegui identificar o período do relatório de consumo.');return}
+    const periodStart=parseSaveDateBR(pm[1]),periodEnd=parseSaveDateBR(pm[2]),periodDays=daysInclusive(periodStart,periodEnd);
+    if(!periodStart||!periodEnd||periodDays<1||periodDays>370){toast('Período inválido no relatório do SAVE.');return}
+    const agg=new Map();
+    let rawLines=0;
+    for(const line of text.split(/\r?\n/)){
+      if(!line.trim())continue;
+      const c=parseSeparatedLine(line);
+      const code=String(c[6]||'').trim(),qty=parseBRNumber(c[11]);
+      if(!/^\d+$/.test(code)||qty===null)continue;
+      rawLines++;
+      const cur=agg.get(code)||{code,name:String(c[7]||'').trim(),unit:String(c[8]||'').trim().toUpperCase(),qty:0,units:{}};
+      const cu=String(c[8]||'').trim().toUpperCase();cur.units[cu]=(cur.units[cu]||0)+1;cur.qty+=qty;
+      cur.unit=Object.entries(cur.units).sort((a,b)=>b[1]-a[1])[0]?.[0]||cur.unit;agg.set(code,cur);
+    }
+    const rows=[...agg.values()];
+    if(!rows.length){toast('Não encontrei consumos válidos no arquivo.');return}
+    const byCode=new Map((cache.items||[]).map(i=>[String(i.code||'').trim(),i]));
+    const preview=rows.map(r=>{
+      const item=byCode.get(r.code)||null;
+      const c90=r.qty*90/periodDays,c30=r.qty*30/periodDays;
+      return {...r,item,c90,c30,old90:item?Number(item.consumption_90d||0):null,old30:item?Number(item.consumption_30d||0):null};
+    });
+    const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item);
+    pendingSaveConsumptionImport={fileName:file.name,periodStart,periodEnd,periodDays,rows,preview};
+    const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${Number(x.qty).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${x.item?Number(x.c30).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${x.item?Number(x.c90).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${x.item?'Encontrado':'Não encontrado'}</td></tr>`).join('');
+    openModal(`<h2>📊 Prévia — Consumo SAVE</h2><p><b>${esc(file.name)}</b></p>
+      <div class="kpis"><div class="kpi"><span>Período</span><b>${esc(pm[1])} a ${esc(pm[2])}</b></div><div class="kpi"><span>Dias</span><b>${periodDays}</b></div><div class="kpi"><span>Lançamentos</span><b>${rawLines}</b></div><div class="kpi"><span>Produtos</span><b>${rows.length}</b></div><div class="kpi"><span>Encontrados</span><b>${matched.length}</b></div><div class="kpi"><span>Não encontrados</span><b>${missing.length}</b></div></div>
+      <p class="muted">Prévia somente leitura. O consumo de cada código foi consolidado. Consumo 30d e 90d são normalizados proporcionalmente ao período do relatório; nenhum estoque será alterado.</p>
+      <div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Consumo no período</th><th>Média 30d</th><th>Normalizado 90d</th><th>Status</th></tr></thead><tbody>${sample}</tbody></table></div>
+      ${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} produtos.</p>`:''}
+      <div class="actions"><button class="secondary" onclick="pendingSaveConsumptionImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveConsumptionImport()">Confirmar consumo</button></div>`);
+  }catch(e){console.error(e);toast('Falha ao ler consumo do SAVE: '+(e.message||e))}
+}
+async function confirmSaveConsumptionImport(){
+  if(!pendingSaveConsumptionImport||!sb)return;
+  const p=pendingSaveConsumptionImport,matched=p.preview.filter(x=>x.item);
+  if(!matched.length){toast('Nenhum código do relatório foi encontrado no HNSS.');return}
+  if(!confirm(`Confirmar consumo de ${matched.length} produto(s)? O estoque não será alterado.`))return;
+  try{
+    const payload=matched.map(x=>({code:x.code,qty:Number(x.qty),unit:x.unit||null}));
+    const {data,error}=await sb.rpc('import_save_consumption',{p_file_name:p.fileName,p_period_start:p.periodStart,p_period_end:p.periodEnd,p_rows:payload});
+    if(error)throw error;
+    pendingSaveConsumptionImport=null;closeModal();await refresh();renderInteligencia();
+    toast(`Consumo importado: ${data?.updated??0} produto(s) atualizados · ${data?.not_found??0} não encontrado(s).`);
+  }catch(e){console.error(e);toast('Não foi possível importar o consumo: '+(e.message||e))}
+}
+
 function intelCreateReq(){const rows=buildIntelRows().filter(x=>x.suggested>0).slice(0,50);if(!rows.length){toast('Nenhum item disponível para requisição');return}if(typeof purchaseForm!=='function'){toast('Módulo de compras indisponível');return}toast(`${rows.length} itens prontos para seleção na requisição`);go('compras')}
 
 function predictiveDays(i){const c=Number(i.consumption_30d||0);if(c<=0)return null;const daily=c/30;const stock=Math.max(0,Number(i.current_stock||0));const on=Math.max(0,Number(i.on_order_qty||0));const min=Math.max(0,Number(i.min_stock||0));return Math.max(0,(stock+on-min)/daily)}
@@ -2030,131 +2290,86 @@ function renderPreditivo(){const rows=predictiveRows();const urgent=rows.filter(
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=(b.innerText||'').trim();if(/aprova|emit|envia|cot|fornecedor/i.test(t))audit('ui_action',{label:t.slice(0,120)});});
 })();
 </script>
-
-<script id="hnss-5-9-5-hardening">
-/* HNSS 5.9.7 - Hardening operacional / teste de estresse */
-(function(){
-  window.HNSS_DIAGNOSTIC = window.HNSS_DIAGNOSTIC || {
-    startedAt: new Date().toISOString(),
-    errors: [],
-    events: []
-  };
-  function log(type,data){
-    try{
-      window.HNSS_DIAGNOSTIC.events.push({time:new Date().toISOString(),type:type,data:String(data||'').slice(0,300)});
-      if(window.HNSS_DIAGNOSTIC.events.length>100) window.HNSS_DIAGNOSTIC.events.shift();
-    }catch(e){}
-  }
-  window.addEventListener('error',function(e){
-    window.HNSS_DIAGNOSTIC.errors.push({time:new Date().toISOString(),message:e.message||'erro',file:e.filename||'',line:e.lineno||0});
-    log('javascript_error',e.message);
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    window.HNSS_DIAGNOSTIC.errors.push({time:new Date().toISOString(),message:String(e.reason||'promise rejeitada')});
-    log('promise_error',e.reason);
-  });
-  const oldFetch=window.fetch;
-  window.fetch=function(){
-    const start=performance.now();
-    return oldFetch.apply(this,arguments).then(function(r){
-      log('fetch',((r.url||'')+' '+Math.round(performance.now()-start)+'ms'));
-      return r;
-    }).catch(function(e){log('fetch_error',e.message);throw e;});
-  };
-  window.hnssHealth=function(){
-    return {
-      generated:new Date().toISOString(),
-      memory:performance.memory?Math.round(performance.memory.usedJSHeapSize/1024/1024)+' MB':'n/d',
-      errors:window.HNSS_DIAGNOSTIC.errors.length,
-      events:window.HNSS_DIAGNOSTIC.events.length
-    };
-  };
-})();
-</script>
-
-<script>
-/* HNSS 5.9.7 - Performance Enterprise Layer
-   Camada complementar sem alterar regras de negócio.
-*/
-(function(){
-  window.HNSS_PERFORMANCE={
-    startedAt:Date.now(),
-    events:[],
-    log:function(type,data){
-      this.events.push({time:new Date().toISOString(),type,data});
-      if(this.events.length>200)this.events.shift();
-    },
-    memory:function(){
-      try{return performance.memory?{
-        used:Math.round(performance.memory.usedJSHeapSize/1048576)+' MB',
-        total:Math.round(performance.memory.totalJSHeapSize/1048576)+' MB'
-      }:null}catch(e){return null}
-    }
-  };
-  window.addEventListener('error',function(e){
-    HNSS_PERFORMANCE.log('javascript_error',{message:e.message});
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    HNSS_PERFORMANCE.log('promise_error',{message:String(e.reason||'erro')});
-  });
-  const oldFetch=window.fetch;
-  window.fetch=function(){
-    const start=Date.now();
-    return oldFetch.apply(this,arguments).then(function(r){
-      HNSS_PERFORMANCE.log('fetch',{url:arguments[0],ms:Date.now()-start,status:r.status});
-      return r;
-    }).catch(function(err){
-      HNSS_PERFORMANCE.log('fetch_error',{message:String(err)});
-      throw err;
-    });
-  };
-})();
-
-/* HNSS 5.9.7 - Otimizacao Enterprise
-   Camada de performance: debounce, cache TTL e carregamento inteligente.
-*/
-window.HNSSPerformance={
-  startedAt:Date.now(),
-  cacheTTL:300000,
-  metrics:{events:0,cacheHits:0}
-};
-function hnssDebounce(fn,wait=250){let t;return function(...args){clearTimeout(t);t=setTimeout(()=>fn.apply(this,args),wait)}}
-function hnssCacheGet(key){try{const v=JSON.parse(localStorage.getItem('hnss_perf_'+key)||'null');if(v&&Date.now()-v.time<HNSSPerformance.cacheTTL){HNSSPerformance.metrics.cacheHits++;return v.data}}catch(e){}return null}
-function hnssCacheSet(key,data){try{localStorage.setItem('hnss_perf_'+key,JSON.stringify({time:Date.now(),data}))}catch(e){}}
-function hnssHealth(){return {uptime:Date.now()-HNSSPerformance.startedAt,metrics:HNSSPerformance.metrics,online:navigator.onLine}}
-</script>
-
-<!-- HNSS 5.9.9 SECURITY GOVERNANCE LAYER -->
-<script>
-(function(){
-  window.HNSS_SECURITY={
-    version:'5.9.8',
-    events:[],
-    log(action,data={}){
-      this.events.push({time:new Date().toISOString(),action,data});
-      if(this.events.length>200)this.events.shift();
-    },
-    getAudit(){return this.events.slice();}
-  };
-  window.addEventListener('error',e=>HNSS_SECURITY.log('javascript_error',{message:e.message,source:e.filename||''}));
-  window.addEventListener('unhandledrejection',e=>HNSS_SECURITY.log('promise_error',{message:String(e.reason||'unknown')}));
-  HNSS_SECURITY.log('system_loaded',{version:'5.9.8'});
-})();
-</script>
-
-<script>
-// HNSS 5.9.9 - Auditoria Operacional Completa
-window.HNSS_AUDIT_LOG = window.HNSS_AUDIT_LOG || [];
-function hnssAudit(event, detail){
-  try{
-    window.HNSS_AUDIT_LOG.push({event:String(event||''),detail:detail||null,at:new Date().toISOString(),user:window.session?.user?.email||null});
-    if(window.HNSS_AUDIT_LOG.length>200) window.HNSS_AUDIT_LOG.shift();
-  }catch(e){}
+<style id="hnss-6126-dashboard">
+.mgr-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}.mgr-card{padding:18px}.mgr-card .lab{font-size:11px;font-weight:800;color:#697386;text-transform:uppercase}.mgr-card .val{font-size:27px;font-weight:850;margin-top:6px}.mgr-card .meta{font-size:12px;color:#697386;margin-top:4px}.mgr-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:16px}.mgr-list{display:grid;gap:8px}.mgr-alert{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e7ebf1;border-radius:11px;background:#fbfcfe}.mgr-alert strong{font-size:13px}.mgr-alert span{font-size:12px;color:#697386;text-align:right}.mgr-actions{display:flex;gap:8px;flex-wrap:wrap}.mgr-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.mgr-strip>div{padding:12px;border:1px solid #edf0f4;border-radius:11px}.mgr-strip b{display:block;font-size:19px}.mgr-strip span{font-size:11px;color:#697386}@media(max-width:950px){.mgr-grid{grid-template-columns:1fr 1fr}.mgr-layout{grid-template-columns:1fr}}@media(max-width:560px){.mgr-grid,.mgr-strip{grid-template-columns:1fr}}
+</style>
+<script id="hnss-6126-dashboard-script">
+function renderDashboard(){
+ const items=cache.items||[], purchases=cache.purchases||[], receipts=cache.receipts||[];
+ const synced=items.filter(i=>{const s=centerStocksFor(i.id);return (cache.stockCenters||[]).some(x=>String(x.item_id)===String(i.id))});
+ let intel=[]; try{intel=buildIntelRows()}catch(e){console.warn('Dashboard inteligência',e)}
+ const abcA=intel.filter(x=>x.abc==='A'), low=intel.filter(x=>x.days!==null&&x.days<15), urgent=intel.filter(x=>x.priority==='Urgente'||x.priority==='Alta');
+ const estimated=intel.reduce((a,x)=>a+Number(x.value||0),0);
+ const open=purchases.filter(p=>!['recebida','cancelada'].includes(String(p.status||'').toLowerCase()));
+ const waiting=purchases.filter(p=>/cotação|aguardando/i.test(String(p.status||''))).length;
+ const sent=purchases.filter(p=>/enviado|pedido emitido|confirmado/i.test(String(p.status||''))).length;
+ const stockValue=synced.reduce((a,i)=>{const s=centerStocksFor(i.id);return a+(s.total*Math.max(0,Number(i.last_unit_price||0)))},0);
+ const noPrice=synced.filter(i=>Number(i.last_unit_price||0)<=0).length;
+ const top=[...intel].sort((a,b)=>{const aa=a.abc==='A'?0:a.abc==='B'?1:2,bb=b.abc==='A'?0:b.abc==='B'?1:2;return aa-bb||(a.days??999)-(b.days??999)}).slice(0,8);
+ const topHtml=top.length?top.map(x=>`<div class="mgr-alert"><strong><span class="abc-pill abc-${x.abc||'C'}">${x.abc||'-'}</span> ${esc(x.name)}</strong><span>${x.days===null?'sem cobertura':Math.round(x.days)+' dias'} · sugerido ${Number(x.suggested||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</span></div>`).join(''):'<div class="dash-empty">Nenhuma reposição indicada no momento.</div>';
+ $('page-dashboard').innerHTML=`<div class="dash-head"><div><div class="eyebrow">HNSS 6.1.32 · CENTRO DE CONTROLE</div><h2>Dashboard Gerencial</h2><p class="dash-sub muted">Estoque SAVE, consumo, Curva ABC e ciclo de compras em uma única visão.</p></div><div class="mgr-actions"><button class="secondary" onclick="refresh().then(()=>{renderDashboard();mountExecutivePanel()})">🔄 Atualizar</button><button class="primary" onclick="go('inteligencia')">🧠 Inteligência de Compras</button></div></div>
+ <div class="mgr-grid"><div class="card mgr-card"><div class="lab">Produtos sincronizados</div><div class="val">${synced.length}</div><div class="meta">universo com saldo SAVE</div></div><div class="card mgr-card"><div class="lab">Reposição sugerida</div><div class="val">${intel.length}</div><div class="meta">${abcA.length} Classe A</div></div><div class="card mgr-card"><div class="lab">Valor previsto</div><div class="val" style="font-size:22px">${money(estimated)}</div><div class="meta">sugestões atuais de compra</div></div><div class="card mgr-card"><div class="lab">Compras abertas</div><div class="val">${open.length}</div><div class="meta">ciclo ainda não encerrado</div></div></div>
+ <div class="mgr-layout"><div class="card panel"><div class="section-heading"><div><h2>⚠ Prioridades de abastecimento</h2><div class="muted">Classe ABC + cobertura atual.</div></div><span class="section-count">${top.length} DESTAQUES</span></div><div class="mgr-list">${topHtml}</div><div class="dash-footer"><span class="muted">A classificação ABC mede impacto econômico, não criticidade clínica.</span><button class="dash-link" onclick="go('inteligencia')">Ver inteligência →</button></div></div>
+ <div class="card panel"><h2>📌 Resumo operacional</h2><div class="mgr-strip"><div><b>${low.length}</b><span>cobertura &lt; 15 dias</span></div><div><b>${urgent.length}</b><span>urgente / alta</span></div><div><b>${noPrice}</b><span>sincronizados sem preço</span></div></div><div class="mgr-strip"><div><b>${waiting}</b><span>aguardando/cotação</span></div><div><b>${sent}</b><span>pedidos enviados</span></div><div><b>${receipts.length}</b><span>recebimentos registrados</span></div></div><div style="margin-top:16px"><div class="muted" style="font-size:12px">Valor estimado do estoque sincronizado</div><div style="font-size:24px;font-weight:850;margin-top:4px">${money(stockValue)}</div></div><div class="mgr-actions" style="margin-top:16px"><button class="secondary" onclick="go('abc')">📈 Curva ABC</button><button class="secondary" onclick="go('compras')">🛒 Compras</button><button class="secondary" onclick="go('recebimento')">📥 Recebimentos</button></div></div></div>`;
 }
-window.addEventListener('error',e=>hnssAudit('javascript_error',{message:e.message}));
-window.addEventListener('unhandledrejection',e=>hnssAudit('promise_error',{message:String(e.reason||'')}));
-hnssAudit('system_loaded',{version:'5.9.9'});
 </script>
-<!-- HNSS 6.0 - Arquitetura Hospital Enterprise - preparação de evolução modular -->
-<!-- HNSS 6.0.1 validation patch: print template corrected -->
+<style id="hnss-6130-fix">
+.hnss-preprod-note{margin:0 0 14px;padding:11px 14px;border:1px solid #b9d5ff;background:#eef6ff;color:#174a8b;border-radius:12px;font-size:12px}
+</style>
+<script id="hnss-6130-save-authority">
+function stockForOperational(i){
+  if(!i?.id)return null;
+  const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(i.id));
+  if(!rows.length)return null;
+  const x=centerStocksFor(i.id), pref=String(i.purchase_stock_center||'').toUpperCase();
+  if(pref==='ALMOXARIFADO')return Number(x.alm||0);
+  if(pref==='TOTAL')return Number(x.total||0);
+  return Number(x.farm||0);
+}
+function predictiveRows(){
+  return (cache.items||[]).map(i=>{
+    const factor=Math.max(0,Number(i.consumption_units_per_stock_unit||0));
+    if(!(factor>0&&i.consumption_conversion_verified_at))return null;
+    const c30=Math.max(0,Number(i.consumption_30d||0))/factor;
+    const raw=stockForOperational(i);
+    if(raw===null)return null;
+    const stock=Math.max(0,raw),on=Math.max(0,Number(i.on_order_qty||0));
+    const min=Math.max(0,Number(i.min_stock||0)),max=Math.max(0,Number(i.max_stock||0));
+    const daily=c30/30,days=c30>0?Math.max(0,(stock+on-min)/daily):null;
+    let risk='safe',label='Sem consumo';
+    if(days!==null){
+      if(days<=7)risk='urgent'; else if(days<=15)risk='high'; else if(days<=30)risk='medium';
+      label=days<=7?'Até 7 dias':days<=15?'8–15 dias':days<=30?'16–30 dias':'>30 dias';
+    }
+    const target=max>0?max:(min>0?min*2:Math.ceil(c30));
+    const suggested=Math.max(0,Math.ceil(target-stock-on)),lot=Math.max(1,Number(i.lot_size||1));
+    const rounded=suggested?Math.ceil(suggested/lot)*lot:0;
+    return {...i,c30,daily,stock,on,min,max,days,risk,label,
+      projected7:Math.max(0,stock+on-daily*7),projected15:Math.max(0,stock+on-daily*15),
+      suggested:rounded,value:rounded*Number(i.last_unit_price||0)};
+  }).filter(Boolean).filter(x=>x.c30>0||x.stock>0||x.min>0)
+    .sort((a,b)=>({urgent:0,high:1,medium:2,safe:3}[a.risk]-({urgent:0,high:1,medium:2,safe:3}[b.risk])||(a.days??9999)-(b.days??9999)));
+}
+</script>
+
+<script id="hnss-6132-purchase-state">
+function persistedApproval(purchaseId){
+  return (cache.approvals||[]).find(a=>String(a.purchase_id)===String(purchaseId)&&String(a.decision||'').toLowerCase()==='aprovada')||null;
+}
+function hasPersistedApproval(purchaseId,quoteId){
+  const p=(cache.purchases||[]).find(x=>String(x.id)===String(purchaseId));
+  const a=persistedApproval(purchaseId);
+  return !!(p && a && p.status==='Aprovada' && p.approval_status==='Aprovada' && p.approved_at
+    && (!quoteId || String(a.selected_quote_id||'')===String(quoteId)));
+}
+function quoteDisplayStatus(q){
+  if(hasPersistedApproval(q.purchase_id,q.id)) return 'Aprovada';
+  if(String(q.status||'')==='Aprovada') return 'Selecionada — aguardando aprovação formal';
+  return q.status||'Recebida';
+}
+function purchaseCanOrder(p){
+  return !!(p && persistedApproval(p.id) && ['Aprovada','Pedido emitido','Enviado ao fornecedor','Confirmado','Recebida'].includes(String(p.status||'')));
+}
+</script>
+
 </body></html>
