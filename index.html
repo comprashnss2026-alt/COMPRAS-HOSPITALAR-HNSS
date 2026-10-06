@@ -280,7 +280,13 @@ window.HNSS_ARCHITECTURE = {
   .sidebar.mobile-collapsed{padding-bottom:8px!important}
   .sidebar.mobile-collapsed .brand{padding-bottom:3px!important}
 }</style><style id="hnss-mobile-v5">
-@media(max-width:700px){#hnss60Banner{display:none!important}.hnss603-tag{top:8px!important;right:8px!important;max-width:calc(100% - 16px)!important;font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}}</style></head>
+@media(max-width:700px){#hnss60Banner{display:none!important}.hnss603-tag{top:8px!important;right:8px!important;max-width:calc(100% - 16px)!important;font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}}</style><style id="hnss-mobile-v6">
+@media(max-width:700px){
+  .sidebar .nav{display:block!important;padding:0!important}
+  .sidebar .nav-group{display:grid!important;grid-template-columns:1fr!important;gap:4px!important;margin:0 0 8px!important}
+  .sidebar .nav-label{grid-column:auto!important;padding:7px 6px 3px!important}
+  .sidebar .nav button{grid-column:auto!important;width:100%!important;min-height:42px!important;padding:9px 12px!important;font-size:13px!important;white-space:nowrap!important;text-align:left!important}
+}</style></head>
 <body data-hnss-version="6.1.32-TESTE" data-environment="production">
 <div id="hnss60Banner" style="position:fixed;bottom:12px;left:12px;z-index:99999;background:#10233f;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 8px 20px #0003">
   HNSS 6.1.32 TESTE | Fluxo de Compras Auditado | Banco preservado
@@ -1664,7 +1670,13 @@ function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===S
   .sidebar.mobile-collapsed{padding-bottom:8px!important}
   .sidebar.mobile-collapsed .brand{padding-bottom:3px!important}
 }</style><style id="hnss-mobile-v5">
-@media(max-width:700px){#hnss60Banner{display:none!important}.hnss603-tag{top:8px!important;right:8px!important;max-width:calc(100% - 16px)!important;font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}}</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
+@media(max-width:700px){#hnss60Banner{display:none!important}.hnss603-tag{top:8px!important;right:8px!important;max-width:calc(100% - 16px)!important;font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}}</style><style id="hnss-mobile-v6">
+@media(max-width:700px){
+  .sidebar .nav{display:block!important;padding:0!important}
+  .sidebar .nav-group{display:grid!important;grid-template-columns:1fr!important;gap:4px!important;margin:0 0 8px!important}
+  .sidebar .nav-label{grid-column:auto!important;padding:7px 6px 3px!important}
+  .sidebar .nav button{grid-column:auto!important;width:100%!important;min-height:42px!important;padding:9px 12px!important;font-size:13px!important;white-space:nowrap!important;text-align:left!important}
+}</style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
 async function sendPurchaseOrder(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
   if(!p)return;
