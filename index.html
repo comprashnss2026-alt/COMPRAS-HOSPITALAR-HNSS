@@ -259,7 +259,19 @@ window.HNSS_ARCHITECTURE = {
   .top>div:last-child button{flex:1!important}
 }
 </style>
-</head>
+<style id="hnss-mobile-v3">
+@media(max-width:700px){
+  .sidebar{padding:8px 10px 10px!important}
+  .sidebar .brand{font-size:18px!important;padding:3px 6px 8px!important}
+  .sidebar .nav{display:grid!important;grid-template-columns:1fr 1fr!important;gap:3px 8px!important;overflow:visible!important;padding:0!important}
+  .sidebar .nav-group{display:grid!important;grid-template-columns:1fr 1fr!important;grid-column:1 / -1!important;gap:3px 8px!important;margin:0!important}
+  .sidebar .nav-label{display:block!important;grid-column:1 / -1!important;padding:5px 6px 2px!important;font-size:10px!important;line-height:1.1!important}
+  .sidebar .nav button{width:100%!important;min-width:0!important;margin:0!important;padding:8px 7px!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important;min-height:38px!important}
+  .sidebar .nav button.active{box-shadow:inset 3px 0 #4f8cff!important}
+  .toast{left:10px!important;right:10px!important;bottom:88px!important;text-align:center!important;font-size:12px!important}
+  .main{padding-top:10px!important}
+}
+</style></head>
 <body data-hnss-version="6.1.32-TESTE" data-environment="production">
 <div id="hnss60Banner" style="position:fixed;bottom:12px;left:12px;z-index:99999;background:#10233f;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 8px 20px #0003">
   HNSS 6.1.32 TESTE | Fluxo de Compras Auditado | Banco preservado
@@ -1621,6 +1633,18 @@ function printPurchaseOrder(id){const p=cache.purchases.find(x=>String(x.id)===S
 @media(max-width:900px){.smart-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:550px){.smart-grid{grid-template-columns:1fr}}
 </style><style id="hnss-mobile-v2">@media(max-width:700px){html,body{overflow-x:hidden}.app{display:block;min-height:100vh}.sidebar{position:sticky;top:0;z-index:20;display:block;width:100%;padding:9px 8px;background:#10294b;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 2px 12px rgba(10,28,52,.18)}.sidebar .brand{font-size:16px;padding:3px 8px 8px;white-space:nowrap}.nav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 5px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav-group{display:contents}.nav-label{display:none}.nav button{flex:0 0 auto;white-space:nowrap;width:auto!important;margin:0;padding:10px 12px;border-radius:10px;font-size:12px}.logout-side{display:none}.main{width:auto;margin:0;padding:12px 10px 28px}.top{padding:4px 2px 12px;gap:8px;align-items:flex-start}.top h1{font-size:22px}.top .logout-top{padding:9px 11px}.card,.panel{border-radius:12px}.toolbar,.actions,.head-tools,.dash-actions,.mgr-actions{display:flex;flex-wrap:wrap;gap:8px}.toolbar button,.actions button,.head-tools button,.dash-actions button,.mgr-actions button{min-height:42px;flex:1 1 145px}.table-wrap,.abc-table,.pilot-table{overflow-x:auto;-webkit-overflow-scrolling:touch}.table,.abc-table table,.pilot-table table{min-width:680px}.form-grid{grid-template-columns:1fr!important}.field input,.field select,.field textarea{font-size:16px;min-height:42px}.kpi-grid,.content-grid,.dash-grid,.smart-grid,.mgr-grid,.predictive-grid{grid-template-columns:1fr!important}.dash-kpis{grid-template-columns:1fr 1fr!important;gap:8px}.dash-kpi{padding:12px}.dash-kpi .num{font-size:24px}.dash-head h2{font-size:24px}.dash-sub{font-size:14px}.purchase-stepper{padding-bottom:10px}.purchase-stepper button{min-width:145px}.purchase-filters{display:block}.purchase-filters .field{min-width:0;margin-bottom:8px}.purchase-filter-count{padding:4px 0}.approval-row{display:block}.approval-row button{width:100%;margin-top:9px}.readiness-footer,.dash-footer{display:block}.readiness-footer button,.dash-footer button{margin-top:8px}.modal{align-items:flex-end!important;padding:0!important}.modal>div,.modal .modal-card{width:100%!important;max-width:none!important;max-height:92vh;border-radius:18px 18px 0 0}.diag-grid{grid-template-columns:1fr 1fr}.abc-toolbar,.abc-filters{display:block}.abc-toolbar .field,.abc-filters .field{margin-bottom:8px;min-width:0}.abc-layout{grid-template-columns:1fr}.login-card{margin:12px!important;width:auto!important}.login-card input{font-size:16px;min-height:46px}.pilot-form{grid-template-columns:1fr!important}.pilot .actions button{width:100%;flex-basis:100%}}
+</style><style id="hnss-mobile-v3">
+@media(max-width:700px){
+  .sidebar{padding:8px 10px 10px!important}
+  .sidebar .brand{font-size:18px!important;padding:3px 6px 8px!important}
+  .sidebar .nav{display:grid!important;grid-template-columns:1fr 1fr!important;gap:3px 8px!important;overflow:visible!important;padding:0!important}
+  .sidebar .nav-group{display:grid!important;grid-template-columns:1fr 1fr!important;grid-column:1 / -1!important;gap:3px 8px!important;margin:0!important}
+  .sidebar .nav-label{display:block!important;grid-column:1 / -1!important;padding:5px 6px 2px!important;font-size:10px!important;line-height:1.1!important}
+  .sidebar .nav button{width:100%!important;min-width:0!important;margin:0!important;padding:8px 7px!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important;min-height:38px!important}
+  .sidebar .nav button.active{box-shadow:inset 3px 0 #4f8cff!important}
+  .toast{left:10px!important;right:10px!important;bottom:88px!important;text-align:center!important;font-size:12px!important}
+  .main{padding-top:10px!important}
+}
 </style></head><body><h1>HNSS — PEDIDO DE COMPRA</h1><p><b>Pedido:</b> ${esc(p.order_number||'-')}<br><b>Requisição:</b> ${esc(p.number||'-')}<br><b>Fornecedor:</b> ${esc(sup?.name||'-')}<br><b>Data:</b> ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Código</th><th>Item</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><div class="total">Total: ${money(p.total_value)}</div><p>Pedido gerado pelo Sistema de Compras HNSS a partir da cotação aprovada.</p><script>window.onload=()=>window.print()<\/script><div aria-hidden="true" style="display:none" data-hnss-version="5.3.0"></div></body></html>`);win.document.close()}
 async function sendPurchaseOrder(id){
   const p=cache.purchases.find(x=>String(x.id)===String(id));
