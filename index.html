@@ -1754,7 +1754,34 @@ async function connectGmail(){try{if(!sb||!session){toast('Faça login antes de 
 async function loadQuotes(){try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();renderQuotes();toast(d.inserted?`${d.inserted} nova(s) cotação(ões). Confira o valor da proposta antes de aprovar`:'Gmail consultado. Nenhuma nova cotação encontrada.')}catch(e){console.error(e);toast('Não foi possível atualizar as cotações: '+(e.message||'erro'))}}
 async function syncQuotesInProcess(purchaseId){const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));try{if(!sb||!session){toast('Faça login novamente');return}const cur=await sb.auth.getSession();const token=cur.data.session?.access_token;if(!token){toast('Sessão expirada. Entre novamente.');return}const r=await fetch(`${CONFIG.url}/functions/v1/sync-gmail-quotes`,{method:'POST',headers:{'Content-Type':'application/json','apikey':CONFIG.anonKey,'Authorization':`Bearer ${token}`},body:JSON.stringify({purchase_id:purchaseId})});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch(_){d={error:raw}}if(!r.ok)throw new Error(d?.error||`Falha na sincronização (HTTP ${r.status})`);await refresh();closeModal();purchaseProcess(purchaseId);const imported=(d.imported||[]).find(x=>String(x.request)===String(p?.number));if(imported)toast(`Cotação importada: ${money(imported.total_value)}${imported.notes?' · '+imported.notes:''}`);else toast(d.inserted?`${d.inserted} cotação(ões) importada(s). Confira em Cotações recebidas.`:'Gmail consultado; nenhuma nova cotação identificada para esta requisição.')}catch(e){console.error(e);toast('Não foi possível sincronizar as respostas: '+(e.message||'erro'))}}
 
-function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Valor total da proposta:</b> ${money(q.total_value)}</p>${q.notes?`<p><b>Condições identificadas:</b> ${esc(q.notes)}</p>`:''}<hr><div style="white-space:pre-wrap;line-height:1.5">${esc(q.body_text||'Sem conteúdo registrado.')}</div></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
+function quoteEmailPresentation(body){
+  let raw=String(body||'').replace(/\r/g,'');
+  // Remove o histórico citado da conversa, preservando a resposta comercial atual.
+  raw=raw.split(/\n\s*(?:Em .{0,180}?escreveu:|On .{0,180}?wrote:|De:\s[^\n]+\nEnviada:)/i)[0];
+  const lines=raw.split('\n').map(x=>x.replace(/^\s*[>*]+\s?/,'').replace(/\*/g,'').trim()).filter(Boolean);
+  const label=/^(código|codigo|item|quantidade|qtd\.?|preço unitário|preco unitario|total)$/i;
+  const codeIndex=lines.findIndex(x=>/^\d{4,}$/.test(x));
+  let table='',intro='',conditions=[];
+  const conditionPatterns=[/prazo(?: de entrega)?\s*:?\s*[^.\n]+/i,/validade da proposta\s*:?\s*[^.\n]+/i,/frete\s*:?\s*[^.\n]+/i,/condição de pagamento\s*:?\s*[^.\n]+/i,/valor total com frete\s*:?\s*[^.\n]+/i];
+  const allText=raw.replace(/\*/g,' ');
+  for(const re of conditionPatterns){const m=allText.match(re);if(m)conditions.push(m[0].trim().replace(/^./,c=>c.toUpperCase()));}
+  if(codeIndex>=0 && lines.length>codeIndex+4){
+    const code=lines[codeIndex], item=lines[codeIndex+1], qty=lines[codeIndex+2], unit=lines[codeIndex+3], total=lines[codeIndex+4];
+    const isMoney=x=>/R\$\s*[\d.]+,\d{2}|^[\d.]+,\d{2}$/.test(x);
+    if(item && qty && isMoney(unit) && isMoney(total)){
+      intro=lines.slice(0,codeIndex).filter(x=>!label.test(x)).join('\n');
+      table=`<div style="overflow-x:auto;margin:14px 0"><table style="width:100%;border-collapse:collapse;min-width:540px;background:var(--surface,transparent)"><thead><tr>${['Código','Descrição do item','Quantidade','Preço unitário','Total dos itens'].map(x=>`<th style="padding:10px 8px;text-align:left;border:1px solid var(--border,#d7dce5);background:var(--surface-2,#edf2fa)">${x}</th>`).join('')}</tr></thead><tbody><tr>${[code,item,qty,unit,total].map(x=>`<td style="padding:10px 8px;border:1px solid var(--border,#d7dce5);vertical-align:top">${esc(x)}</td>`).join('')}</tr></tbody></table></div>`;
+    }
+  }
+  if(!table){
+    const cleaned=lines.filter(x=>!label.test(x));
+    intro=cleaned.join('\n');
+  }
+  const introHtml=intro?`<div style="white-space:pre-line;line-height:1.55">${esc(intro)}</div>`:'';
+  const conditionsHtml=conditions.length?`<section style="margin-top:14px;padding:12px;border:1px solid var(--border,#d7dce5);border-radius:10px"><b>Condições comerciais</b><ul style="margin:8px 0 0;padding-left:20px">${conditions.map(x=>`<li style="margin:4px 0">${esc(x)}</li>`).join('')}</ul></section>`:'';
+  return `${introHtml}${table}${conditionsHtml}` || '<p>Sem conteúdo comercial estruturado. Consulte o e-mail original.</p>';
+}
+function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Total dos itens (sem frete):</b> ${money(q.total_value)}</p>${!q.body_text&&q.notes?`<p><b>Resumo da conferência:</b> ${esc(q.notes)}</p>`:''}<hr>${quoteEmailPresentation(q.body_text)}</div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
 
 function editQuote(id){
   const q=cache.quotes.find(x=>String(x.id)===String(id));
