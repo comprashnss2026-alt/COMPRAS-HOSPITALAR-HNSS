@@ -1580,30 +1580,53 @@ async function savePurchaseEdit(id){
 }
 function renderQuotes(){let rows=cache.quotes.map(q=>{let p=cache.purchases.find(x=>String(x.id)===String(q.purchase_id));let sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));return `<tr><td>${esc(p?.number||'-')}</td><td>${esc(sup?.name||q.from_name||q.from_email||'-')}</td><td>${esc(q.subject||'-')}</td><td>${new Date(q.received_at).toLocaleString('pt-BR')}</td><td>${money(q.total_value)}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button><button type="button" class="secondary" onclick="compareQuotes('${q.purchase_id}')">⚖️ Comparar</button><button type="button" class="primary" onclick="editQuote('${q.id}')">✏️ Editar cotação</button></td></tr>`}).join('');$('page-compras').innerHTML=`<div class="card panel"><div class="toolbar"><button class="secondary" onclick="renderPurchases()">📋 Requisições</button><button class="secondary" onclick="connectGmail()">🔗 Conectar Gmail</button><button class="primary" onclick="loadQuotes()">🔄 Atualizar cotações</button></div><h2>📨 Cotações recebidas</h2><p class="muted">As respostas dos fornecedores serão importadas do Gmail e vinculadas automaticamente à solicitação pelo número da requisição.</p><div class="table-wrap"><table class="table"><thead><tr><th>Solicitação</th><th>Fornecedor</th><th>Assunto</th><th>Recebida em</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=7 style="padding:22px;text-align:center">Nenhuma cotação recebida ainda.</td></tr>'}</tbody></table></div></div>`}
 
+function quoteCommercialData(q){
+  const rawAll=String(q?.body_text||'').replace(/\r/g,'');
+  // Use the supplier's current reply, not old messages quoted underneath it.
+  const raw=rawAll.split(/\n\s*(?:Em .{0,180}?escreveu:|On .{0,180}?wrote:|De:\s[^\n]+\nEnviada:)/i)[0];
+  const text=raw.replace(/\*/g,' ').replace(/\u00a0/g,' ');
+  const parseMoney=v=>{if(!v)return null;let x=String(v).replace(/R\$\s*/i,'').trim();if(x.includes(','))x=x.replace(/\./g,'').replace(',','.');const n=Number(x);return Number.isFinite(n)?n:null};
+  const findMoney=(patterns)=>{for(const re of patterns){const m=text.match(re);if(m){const n=parseMoney(m[1]);if(n!==null)return n}}return null};
+  const freight=findMoney([/(?:valor\s+do\s+)?frete\s*:?\s*R\$?\s*([\d.]+,\d{2}|\d+\.\d{2})/i]);
+  const explicitLanded=findMoney([/(?:valor\s+total\s+com\s+frete|total\s+geral\s+com\s+frete|total\s+da\s+proposta\s+com\s+frete)\s*:?\s*R\$?\s*([\d.]+,\d{2}|\d+\.\d{2})/i]);
+  const parsedItems=findMoney([/(?:total\s+dos\s+itens(?:\s*\(sem\s*frete\))?|subtotal\s+dos\s+itens|total\s+dos\s+produtos)\s*:?\s*R\$?\s*([\d.]+,\d{2}|\d+\.\d{2})/i]);
+  const base=parsedItems!==null?parsedItems:Number(q?.total_value||0);
+  const deliveryMatch=text.match(/(?:prazo(?:\s+de\s+entrega)?|entrega\s+em)\s*:?\s*(\d+)\s*dias?\s*(úteis|uteis|corridos)?/i);
+  const deliveryDays=deliveryMatch?Number(deliveryMatch[1]):(q?.delivery_days??q?.lead_time_days??q?.delivery_time_days??null);
+  const deliveryUnit=deliveryMatch&&deliveryMatch[2]?deliveryMatch[2].toLowerCase().replace('uteis','úteis'):'dias';
+  const landed=explicitLanded!==null?explicitLanded:(freight!==null?base+freight:base);
+  return {itemsTotal:base,freight,landedTotal:landed,deliveryDays,deliveryUnit,hasCommercialDetails:freight!==null||explicitLanded!==null||deliveryMatch!==null};
+}
+
 function compareQuotes(purchaseId){
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
   if(!p){toast('Requisição não encontrada');return}
   const qs=cache.quotes.filter(q=>String(q.purchase_id)===String(purchaseId));
-  const valid=qs.filter(q=>q.status!=='Rejeitada'&&Number(q.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
+  const commercial=new Map(qs.map(q=>[String(q.id),quoteCommercialData(q)]));
+  const totalOf=q=>Number(commercial.get(String(q.id))?.landedTotal??q.total_value??0);
+  const valid=qs.filter(q=>q.status!=='Rejeitada'&&totalOf(q)>0).sort((a,b)=>totalOf(a)-totalOf(b));
   const winner=valid[0]||null;
   const rows=qs.slice().sort((a,b)=>{
-    const av=Number(a.total_value||0),bv=Number(b.total_value||0);
+    const av=totalOf(a),bv=totalOf(b);
     if(av<=0&&bv>0)return 1;
     if(bv<=0&&av>0)return -1;
     return av-bv;
   }).map(q=>{
     const sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));
     const name=sup?.name||q.from_name||q.from_email||'Fornecedor não identificado';
-    const total=Number(q.total_value||0);
-    const prazo=q.delivery_days??q.lead_time_days??q.delivery_time_days??null;
+    const c=commercial.get(String(q.id))||quoteCommercialData(q);
+    const total=totalOf(q);
     const isWinner=winner&&String(winner.id)===String(q.id);
-    return `<tr ${isWinner?'style="font-weight:800;background:#f0fff5"':''}><td>${isWinner?'🏆 ':''}${esc(name)}</td><td>${esc(q.from_email||'-')}</td><td>${total>0?money(total):'<span class="muted">Aguardando valor</span>'}</td><td>${prazo!==null?esc(String(prazo))+' dias':'<span class="muted">Não informado</span>'}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button>${!persistedApproval(purchaseId)&&total>0?` <button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${purchaseId}')">✅ Dar aceite</button>`:''}</td></tr>`;
+    const detail=c.freight!==null?`<small class="muted" style="display:block;margin-top:3px">Itens: ${money(c.itemsTotal)} · Frete: ${money(c.freight)}</small>`:(c.itemsTotal!==total?`<small class="muted" style="display:block;margin-top:3px">Itens: ${money(c.itemsTotal)}</small>`:'');
+    const prazo=c.deliveryDays!==null&&c.deliveryDays!==undefined?`${esc(String(c.deliveryDays))} ${esc(c.deliveryUnit||'dias')}`:'<span class="muted">Não informado</span>';
+    return `<tr ${isWinner?'style="font-weight:800;background:#f0fff5"':''}><td>${isWinner?'🏆 ':''}${esc(name)}</td><td>${esc(q.from_email||'-')}</td><td>${total>0?money(total)+detail:'<span class="muted">Aguardando valor</span>'}</td><td>${prazo}</td><td><span class="badge ${q.status==='Aprovada'?'ok':q.status==='Rejeitada'?'crit':'warn'}">${esc(quoteDisplayStatus(q))}</span></td><td><button type="button" class="secondary" onclick="viewQuote('${q.id}')">👁 Ver</button>${!persistedApproval(purchaseId)&&total>0?` <button type="button" class="primary" onclick="openQuoteApproval('${q.id}','${purchaseId}')">✅ Dar aceite</button>`:''}</td></tr>`;
   }).join('');
   const formal=persistedApproval(purchaseId); const approveButton=winner&&!formal?`<button class="primary" onclick="openQuoteApproval('${winner.id}','${purchaseId}')">✅ Analisar e dar aceite</button>`:(formal?`<span class="badge ok">✅ Compra formalmente aprovada</span>`:'');
   openModal(`<h2>⚖️ Comparação de cotações</h2>
     <div class="card panel" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Valor estimado</div><strong>${money(p.total_value||0)}</strong></div><div><div class="muted">Cotações recebidas</div><strong>${qs.length}</strong></div></div></div>
-    <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Fornecedor</th><th>E-mail</th><th>Total da proposta</th><th>Prazo</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=5 style="padding:22px;text-align:center">Nenhuma cotação recebida para esta requisição.</td></tr>'}</tbody></table></div>
-    ${winner?`<div class="card panel" style="margin-top:14px;background:#f0fff5;border-color:#bfe8ca"><h3 style="margin:0 0 6px">🏆 Melhor preço identificado</h3><div>${esc((cache.suppliers.find(x=>String(x.id)===String(winner.supplier_id))?.name)||winner.from_name||winner.from_email||'Fornecedor')}</div><div style="font-size:24px;font-weight:800;margin-top:4px">${money(winner.total_value)}</div><div class="muted">Critério automático: menor valor total positivo informado. Economia frente ao valor estimado: <b>${money(Math.max(0,Number(p.total_value||0)-Number(winner.total_value||0)))}</b>.</div></div>`:'<div class="card panel" style="margin-top:14px"><b>⚠️ Ainda não há valores positivos para comparação.</b><div class="muted" style="margin-top:5px">Quando uma proposta com valor total for recebida ou corrigida, ela aparecerá automaticamente aqui.</div></div>'}
+    <p class="muted" style="margin:10px 0 0">A comparação usa o total com frete quando esse valor estiver informado no e-mail. Confira as condições antes de aprovar.</p>
+    <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Fornecedor</th><th>E-mail</th><th>Total da proposta</th><th>Prazo de entrega</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=6 style="padding:22px;text-align:center">Nenhuma cotação recebida para esta requisição.</td></tr>'}</tbody></table></div>
+    ${winner?`<div class="card panel" style="margin-top:14px;background:#f0fff5;border-color:#bfe8ca"><h3 style="margin:0 0 6px">🏆 Menor custo total identificado</h3><div>${esc((cache.suppliers.find(x=>String(x.id)===String(winner.supplier_id))?.name)||winner.from_name||winner.from_email||'Fornecedor')}</div><div style="font-size:24px;font-weight:800;margin-top:4px">${money(totalOf(winner))}</div><div class="muted">Critério automático: menor custo total positivo, incluindo frete quando identificado. Economia frente ao valor estimado: <b>${money(Math.max(0,Number(p.total_value||0)-totalOf(winner)))}</b>.</div></div>`:'<div class="card panel" style="margin-top:14px"><b>⚠️ Ainda não há valores positivos para comparação.</b><div class="muted" style="margin-top:5px">Quando uma proposta com valor total for recebida ou corrigida, ela aparecerá automaticamente aqui.</div></div>'}
     <div class="actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button>${approveButton}</div>`);
 }
 
@@ -1611,20 +1634,23 @@ function openQuoteApproval(quoteId,purchaseId){
   const q=cache.quotes.find(x=>String(x.id)===String(quoteId));
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
   if(!q||!p){toast('Cotação ou requisição não encontrada');return}
-  const total=Number(q.total_value||0);
+  const commercial=quoteCommercialData(q);
+  const total=Number(commercial.landedTotal||q.total_value||0);
   if(!(total>0)){toast('A cotação selecionada não possui um valor positivo');return}
-  const qs=cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&x.status!=='Rejeitada'&&Number(x.total_value||0)>0).sort((a,b)=>Number(a.total_value)-Number(b.total_value));
+  const qs=cache.quotes.filter(x=>String(x.purchase_id)===String(purchaseId)&&x.status!=='Rejeitada'&&Number(quoteCommercialData(x).landedTotal||x.total_value||0)>0).sort((a,b)=>Number(quoteCommercialData(a).landedTotal||a.total_value||0)-Number(quoteCommercialData(b).landedTotal||b.total_value||0));
   const lowest=qs[0]||null;
+  const lowestTotal=lowest?Number(quoteCommercialData(lowest).landedTotal||lowest.total_value||0):0;
   const isLowest=lowest&&String(lowest.id)===String(q.id);
   const sup=cache.suppliers.find(x=>String(x.id)===String(q.supplier_id));
   const supplierName=sup?.name||q.from_name||q.from_email||'Fornecedor não identificado';
-  const diff=isLowest||!lowest?0:total-Number(lowest.total_value||0);
-  const pct=isLowest||!lowest?0:(diff/Number(lowest.total_value||1))*100;
+  const diff=isLowest||!lowest?0:total-lowestTotal;
+  const pct=isLowest||!lowest?0:(diff/Math.max(lowestTotal,1))*100;
   openModal(`<h2>✅ Dar aceite na cotação</h2>
     <p class="muted" style="margin-top:-6px">O aceite registra formalmente a escolha do fornecedor para esta requisição.</p>
-    <div class="card panel" style="margin-top:12px"><div class="grid"><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Fornecedor</div><strong>${esc(supplierName)}</strong></div><div><div class="muted">Valor aprovado</div><strong style="font-size:22px">${money(total)}</strong></div></div></div>
-    ${isLowest?`<div class="process-banner process-complete" style="margin-top:12px"><b>🏆 Menor preço identificado</b><div class="muted" style="margin-top:4px">Esta proposta é a menor cotação válida registrada para a requisição.</div></div>`:`<div class="process-banner process-incomplete" style="margin-top:12px"><b>⚠️ Esta não é a menor cotação</b><div class="muted" style="margin-top:4px">Menor preço: ${money(lowest?.total_value||0)} · Diferença: ${money(diff)} (${pct.toFixed(2)}%). A justificativa da escolha é obrigatória.</div></div>`}
-    <div class="field" style="margin-top:14px"><label>Justificativa do aceite</label><textarea id="qa_just" rows="4" style="width:100%;padding:10px;border:1px solid #d6dce5;border-radius:10px" placeholder="Ex.: menor preço entre as propostas válidas.">${isLowest?'Menor preço entre as propostas válidas.':''}</textarea></div>
+    <div class="card panel" style="margin-top:12px"><div class="grid"><div><div class="muted">Requisição</div><strong>${esc(p.number||'-')}</strong></div><div><div class="muted">Fornecedor</div><strong>${esc(supplierName)}</strong></div><div><div class="muted">Valor total considerado</div><strong style="font-size:22px">${money(total)}</strong><div class="muted">${commercial.freight!==null?`Itens ${money(commercial.itemsTotal)} + frete ${money(commercial.freight)}`:'Valor informado na proposta'}</div></div></div></div>
+    ${isLowest?`<div class="process-banner process-complete" style="margin-top:12px"><b>🏆 Menor custo total identificado</b><div class="muted" style="margin-top:4px">A comparação considera o frete identificado no e-mail, quando disponível.</div></div>`:`<div class="process-banner process-incomplete" style="margin-top:12px"><b>⚠️ Esta não é a menor cotação</b><div class="muted" style="margin-top:4px">Menor custo total: ${money(lowestTotal)} · Diferença: ${money(diff)} (${pct.toFixed(2)}%). A justificativa da escolha é obrigatória.</div></div>`}
+    ${commercial.deliveryDays!==null&&commercial.deliveryDays!==undefined?`<p class="muted">Prazo identificado no e-mail: ${esc(String(commercial.deliveryDays))} ${esc(commercial.deliveryUnit||'dias')}.</p>`:''}
+    <div class="field" style="margin-top:14px"><label>Justificativa do aceite</label><textarea id="qa_just" rows="4" style="width:100%;padding:10px;border:1px solid #d6dce5;border-radius:10px" placeholder="Ex.: menor preço entre as propostas válidas.">${isLowest?'Menor custo total entre as propostas válidas.':''}</textarea></div>
     <div class="card panel" style="margin-top:12px"><b>Após confirmar</b><div class="muted" style="margin-top:5px">A cotação será marcada como <b>Aprovada</b>, a requisição passará para <b>Aprovada</b> e responsável/data/hora ficarão registrados.</div></div>
     <div class="actions"><button type="button" class="secondary" onclick="closeModal()">Cancelar</button><button type="button" class="primary" onclick="approveQuote('${q.id}','${p.id}')">✅ Confirmar aceite</button></div>`);
 }
@@ -1634,7 +1660,8 @@ async function approveQuote(quoteId,purchaseId){
   const p=cache.purchases.find(x=>String(x.id)===String(purchaseId));
   if(!q||!p){toast('Cotação ou requisição não encontrada');return}
   if(persistedApproval(purchaseId)){toast('Esta requisição já possui aprovação formal registrada');return}
-  const total=Number(q.total_value||0);
+  const commercial=quoteCommercialData(q);
+  const total=Number(commercial.landedTotal||q.total_value||0);
   if(q.status==='Rejeitada'){toast('A cotação foi rejeitada');return}
   if(!(total>0)){toast('A cotação selecionada não possui valor positivo');return}
   if(!q.supplier_id){toast('Vincule a cotação a um fornecedor antes da aprovação');return}
@@ -1642,6 +1669,12 @@ async function approveQuote(quoteId,purchaseId){
   if(!justification){toast('Informe a justificativa do aceite');return}
   try{
     if(!sb){toast('A aprovação exige conexão com o banco');return}
+    // Antes da aprovação, grava no registro da cotação o custo total com frete identificado no e-mail.
+    // O banco e o catálogo de produtos não são alterados por esta correção; atualiza-se somente esta proposta.
+    if(commercial.hasCommercialDetails && total>0 && Math.abs(total-Number(q.total_value||0))>0.009){
+      const quoteUpdate=await sb.from('purchase_quotes').update({total_value:total}).eq('id',quoteId);
+      if(quoteUpdate.error)throw quoteUpdate.error;
+    }
     const {error}=await sb.rpc('approve_purchase_persisted',{
       p_purchase_id:purchaseId,p_quote_id:quoteId,p_justification:justification
     });
@@ -1781,7 +1814,7 @@ function quoteEmailPresentation(body){
   const conditionsHtml=conditions.length?`<section style="margin-top:14px;padding:12px;border:1px solid var(--border,#d7dce5);border-radius:10px"><b>Condições comerciais</b><ul style="margin:8px 0 0;padding-left:20px">${conditions.map(x=>`<li style="margin:4px 0">${esc(x)}</li>`).join('')}</ul></section>`:'';
   return `${introHtml}${table}${conditionsHtml}` || '<p>Sem conteúdo comercial estruturado. Consulte o e-mail original.</p>';
 }
-function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Total dos itens (sem frete):</b> ${money(q.total_value)}</p>${!q.body_text&&q.notes?`<p><b>Resumo da conferência:</b> ${esc(q.notes)}</p>`:''}<hr>${quoteEmailPresentation(q.body_text)}</div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
+function viewQuote(id){let q=cache.quotes.find(x=>String(x.id)===String(id));if(!q)return;const c=quoteCommercialData(q);openModal(`<h2>📨 Cotação recebida</h2><div class="card panel" style="margin-top:12px"><p><b>Assunto:</b> ${esc(q.subject||'-')}</p><p><b>Remetente:</b> ${esc(q.from_name||'')} ${q.from_email?'&lt;'+esc(q.from_email)+'&gt;':''}</p><p><b>Recebida:</b> ${new Date(q.received_at).toLocaleString('pt-BR')}</p><p><b>Total dos itens:</b> ${money(c.itemsTotal)}</p>${c.freight!==null?`<p><b>Frete:</b> ${money(c.freight)}</p><p><b>Total com frete:</b> <strong>${money(c.landedTotal)}</strong></p>`:''}${c.deliveryDays!==null&&c.deliveryDays!==undefined?`<p><b>Prazo de entrega:</b> ${esc(String(c.deliveryDays))} ${esc(c.deliveryUnit||'dias')}</p>`:''}${!q.body_text&&q.notes?`<p><b>Resumo da conferência:</b> ${esc(q.notes)}</p>`:''}<hr>${quoteEmailPresentation(q.body_text)}</div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>`)}
 
 function editQuote(id){
   const q=cache.quotes.find(x=>String(x.id)===String(id));
