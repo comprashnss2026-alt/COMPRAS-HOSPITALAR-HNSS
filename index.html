@@ -713,10 +713,21 @@ function centerStocksFor(itemId){
   return {farm:farmQty,alm:almQty,total:farmQty+almQty};
 }
 function detectSaveCostCenter(text){
-  const m=String(text||'').match(/Centro Custo\s*-\s*(FARM[ÁA]CIA|ALMOXARIFADO)/i);
-  if(m)return /ALMOX/i.test(m[1])?'ALMOXARIFADO':'FARMÁCIA';
-  const m2=String(text||'').match(/;\s*"(FARM[ÁA]CIA|ALMOXARIFADO)"\s*;/i);
-  if(m2)return /ALMOX/i.test(m2[1])?'ALMOXARIFADO':'FARMÁCIA';
+  // O relatório Produtos - Balanço - Centro Custo do SAVE pode trazer
+  // FARMACIA sem acento e o centro na 11ª coluna (índice 10).
+  const raw=String(text||'');
+  const norm=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  const title=norm.match(/CENTRO\s+(?:DE\s+)?CUSTO\s*[-:]\s*(FARMACIA|ALMOXARIFADO)/);
+  if(title)return title[1]==='ALMOXARIFADO'?'ALMOXARIFADO':'FARMÁCIA';
+  for(const line of raw.split(/\r?\n/)){
+    const c=/^\s*\"Produtos - Balanço - Centro Custo\"/i.test(line)?parseCommaSeparatedLine(line):parseSeparatedLine(line);
+    const center=String(c[10]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+    if(center==='ALMOXARIFADO')return 'ALMOXARIFADO';
+    if(center==='FARMACIA')return 'FARMÁCIA';
+  }
+  if(/ALMOXARIFADO/.test(norm)&&!/FARMACIA/.test(norm))return 'ALMOXARIFADO';
+  if(/FARMACIA/.test(norm))return 'FARMÁCIA';
+  if(/ALMOXARIFADO/.test(norm))return 'ALMOXARIFADO';
   return null;
 }
 
@@ -767,34 +778,60 @@ function parseSeparatedLine(line){
   }
   out.push(cur);return out;
 }
+function parseCommaSeparatedLine(line){
+  const out=[];let cur='',quoted=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){
+      if(quoted&&line[i+1]==='"'){cur+='"';i++;}else quoted=!quoted;
+    }else if(ch===','&&!quoted){out.push(cur);cur='';}else cur+=ch;
+  }
+  out.push(cur);return out;
+}
 async function previewSaveStockFile(file){
   if(!file)return;
   try{
     const buf=await file.arrayBuffer(); let text;
     try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
-    const center=detectSaveCostCenter(text);
-    if(!center){toast('Não consegui identificar FARMÁCIA ou ALMOXARIFADO no arquivo do SAVE.');return}
-    const rows=[];
+    const allRows=[]; const centers=new Set();
     for(const line of text.split(/\r?\n/)){
-      if(!line.trim())continue; const c=parseSeparatedLine(line);
-      const code=String(c[11]||'').trim(), stock=parseBRNumber(c[14]), cost=parseBRNumber(c[16]);
+      if(!line.trim())continue;
+      const commaFormat=/^\s*"Produtos - Balanço - Centro Custo"/i.test(line);
+      const c=commaFormat?parseCommaSeparatedLine(line):parseSeparatedLine(line);
+      const rawCenter=String(c[10]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+      if(!rawCenter)continue;
+      const center=rawCenter==='FARMACIA'?'FARMÁCIA':rawCenter==='ALMOXARIFADO'?'ALMOXARIFADO':null;
+      if(!center)continue;
+      const code=String(c[11]||'').trim();
+      const stock=commaFormat?parseBRNumber(String(c[14]||'')+','+String(c[15]||'00')):parseBRNumber(c[14]);
+      const cost=commaFormat?parseBRNumber(String(c[16]||'')+','+String(c[17]||'00')):parseBRNumber(c[16]);
       if(!/^\d+$/.test(code)||stock===null)continue;
-      rows.push({code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock,cost});
+      allRows.push({center,code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock,cost});
+      centers.add(center);
     }
-    if(!rows.length){toast('Não encontrei produtos no arquivo do SAVE.');return}
-    const byCode=new Map((cache.items||[]).map(i=>[String(i.code||'').trim(),i]));
-    const preview=rows.map(r=>{
-      const i=byCode.get(r.code);
-      const c=i?centerStocksFor(i.id):null;
-      const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||sc.sector||'').toUpperCase()===center));
-      const old=i?(center==='FARMÁCIA'?c.farm:c.alm):null;
-      return {...r,item:i||null,old,diff:i?r.stock-old:null,hasCenterRecord,needsCreate:!!i&&!hasCenterRecord};
-    });
-    const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item),changed=matched.filter(x=>x.needsCreate||Math.abs(x.diff)>0.000001);
-    pendingSaveStockImport={fileName:file.name,center,rows,preview};
-    const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${!x.item?'Não encontrado':x.needsCreate?'Novo no centro':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${x.cost==null?'—':money(x.cost)}</td></tr>`).join('');
-    openModal(`<h2>📥 Prévia — ${esc(center)}</h2><p><b>${esc(file.name)}</b></p><div class="kpis"><div class="kpi"><span>Centro</span><b>${esc(center)}</b></div><div class="kpi"><span>Linhas SAVE</span><b>${rows.length}</b></div><div class="kpi"><span>Encontrados</span><b>${matched.length}</b></div><div class="kpi"><span>A atualizar/criar</span><b>${changed.length}</b></div><div class="kpi"><span>Não encontrados</span><b>${missing.length}</b></div></div><p class="muted">Prévia somente leitura. Nada será alterado antes da confirmação.</p><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input id="saveUpdateCost" type="checkbox"> Atualizar também o preço unitário global do produto pelo custo médio do SAVE</label><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo HNSS — ${esc(center)}</th><th>Saldo SAVE</th><th>Diferença</th><th>C. Médio SAVE</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar importação de ${esc(center)}</button></div>`);
+    if(!allRows.length){toast('Não encontrei linhas de Farmácia ou Almoxarifado no arquivo do SAVE.');return}
+    const orderedCenters=['FARMÁCIA','ALMOXARIFADO'].filter(c=>centers.has(c));
+    pendingSaveStockImport={fileName:file.name,allRows,centers:orderedCenters,center:orderedCenters[0]};
+    renderSaveStockPreview(pendingSaveStockImport.center);
   }catch(e){console.error(e);toast('Falha ao ler arquivo do SAVE: '+(e.message||e))}
+}
+function renderSaveStockPreview(center){
+  if(!pendingSaveStockImport)return;
+  const p=pendingSaveStockImport; p.center=center;
+  const rows=p.allRows.filter(r=>r.center===center);
+  const byCode=new Map((cache.items||[]).map(i=>[String(i.code||'').trim(),i]));
+  const preview=rows.map(r=>{
+    const i=byCode.get(r.code); const c=i?centerStocksFor(i.id):null;
+    const target=center==='FARMÁCIA'?'FARMACIA':'ALMOXARIFADO';
+    const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||sc.sector||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase()===target));
+    const old=i?(center==='FARMÁCIA'?c.farm:c.alm):null;
+    return {...r,item:i||null,old,diff:i?r.stock-old:null,hasCenterRecord,needsCreate:!!i&&!hasCenterRecord};
+  });
+  const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item),changed=matched.filter(x=>x.needsCreate||Math.abs(x.diff)>0.000001);
+  p.rows=rows; p.preview=preview;
+  const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${!x.item?'Não encontrado':x.needsCreate?'Novo no centro':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${x.cost==null?'—':money(x.cost)}</td></tr>`).join('');
+  const options=p.centers.map(c=>`<option value="${esc(c)}" ${c===center?'selected':''}>${esc(c)}</option>`).join('');
+  openModal(`<h2>📥 Prévia — ${esc(center)}</h2><p><b>${esc(p.fileName)}</b></p><div class="field"><label>Centro de custo a atualizar</label><select id="saveStockCenterChoice" onchange="renderSaveStockPreview(this.value)">${options}</select></div><div class="kpis"><div class="kpi"><span>Centro</span><b>${esc(center)}</b></div><div class="kpi"><span>Linhas SAVE</span><b>${rows.length}</b></div><div class="kpi"><span>Encontrados</span><b>${matched.length}</b></div><div class="kpi"><span>A atualizar/criar</span><b>${changed.length}</b></div><div class="kpi"><span>Não encontrados</span><b>${missing.length}</b></div></div><p class="muted">Prévia somente leitura. Somente os produtos do centro selecionado serão enviados para atualização.</p><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input id="saveUpdateCost" type="checkbox"> Atualizar também o preço unitário global do produto pelo custo médio do SAVE</label><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo HNSS — ${esc(center)}</th><th>Saldo SAVE</th><th>Diferença</th><th>C. Médio SAVE</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar importação de ${esc(center)}</button></div>`);
 }
 async function confirmSaveStockImport(){
   if(!pendingSaveStockImport||!sb)return;
