@@ -788,64 +788,76 @@ function parseCommaSeparatedLine(line){
   }
   out.push(cur);return out;
 }
+function parseSaveBalanceIntegerParts(whole,decimal){
+  const a=String(whole??'').trim(),b=String(decimal??'').trim();
+  if(!a)return null;
+  // No relatório CHR, valores inteiros aparecem duplicados nas duas colunas.
+  // Quando são diferentes, representam a parte decimal (ex.: 0 e 60 = 0,60).
+  return parseBRNumber(a===b||!b?a:a+','+b);
+}
 async function previewSaveStockFile(file){
   if(!file)return;
   try{
-    const buf=await file.arrayBuffer(); let text;
+    const buf=await file.arrayBuffer();
+    let text;
     try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
-    const allRows=[]; const centers=new Set();
-    for(const line of text.split(/\r?\n/)){
-      if(!line.trim())continue;
-      const commaFormat=/^\s*"Produtos - Balanço - Centro Custo"/i.test(line);
+    text=text.replace(/^\uFEFF/,'');
+    const allRows=[],centers=new Set(),invalid=[];
+    const lines=text.split(/\r?\n/);
+    for(let index=0;index<lines.length;index++){
+      const line=lines[index];if(!line.trim())continue;
+      const commaFormat=/^\s*"?Produtos - Balanço - Centro Custo/i.test(line);
       const c=commaFormat?parseCommaSeparatedLine(line):parseSeparatedLine(line);
       const rawCenter=String(c[10]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
-      if(!rawCenter)continue;
-      const center=rawCenter==='FARMACIA'?'FARMÁCIA':rawCenter==='ALMOXARIFADO'?'ALMOXARIFADO':null;
-      if(!center)continue;
+      if(rawCenter!=='FARMACIA'&&rawCenter!=='ALMOXARIFADO')continue;
+      const center=rawCenter==='FARMACIA'?'FARMÁCIA':'ALMOXARIFADO';
       const code=String(c[11]||'').trim();
-      const stock=commaFormat?parseBRNumber(String(c[14]||'')+','+String(c[15]||'00')):parseBRNumber(c[14]);
-      const cost=commaFormat?parseBRNumber(String(c[16]||'')+','+String(c[17]||'00')):parseBRNumber(c[16]);
-      if(!/^\d+$/.test(code)||stock===null)continue;
-      allRows.push({center,code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock,cost});
+      const stock=commaFormat?parseSaveBalanceIntegerParts(c[14],c[15]):parseBRNumber(c[14]);
+      if(!/^\d+$/.test(code)||stock===null||stock<0){invalid.push(index+1);continue;}
+      allRows.push({center,code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock});
       centers.add(center);
     }
-    if(!allRows.length){toast('Não encontrei linhas de Farmácia ou Almoxarifado no arquivo do SAVE.');return}
+    if(!allRows.length){toast('Não encontrei linhas válidas de FARMACIA ou ALMOXARIFADO no arquivo.');return;}
+    const seen=new Set();
+    for(const r of allRows){const k=r.center+'|'+r.code;if(seen.has(k))throw new Error('Código duplicado no arquivo: '+r.code+' ('+r.center+'). Importação cancelada para evitar saldo ambíguo.');seen.add(k);}
     const orderedCenters=['FARMÁCIA','ALMOXARIFADO'].filter(c=>centers.has(c));
-    pendingSaveStockImport={fileName:file.name,allRows,centers:orderedCenters,center:orderedCenters[0]};
+    pendingSaveStockImport={fileName:file.name,allRows,centers:orderedCenters,center:orderedCenters[0],invalidLines:invalid};
     renderSaveStockPreview(pendingSaveStockImport.center);
-  }catch(e){console.error(e);toast('Falha ao ler arquivo do SAVE: '+(e.message||e))}
+  }catch(e){console.error(e);toast('Falha ao ler arquivo do SAVE: '+(e.message||e));}
 }
 function renderSaveStockPreview(center){
   if(!pendingSaveStockImport)return;
-  const p=pendingSaveStockImport; p.center=center;
-  const rows=p.allRows.filter(r=>r.center===center);
+  const p=pendingSaveStockImport;p.center=center;
   const byCode=new Map((cache.items||[]).map(i=>[String(i.code||'').trim(),i]));
-  const preview=rows.map(r=>{
-    const i=byCode.get(r.code); const c=i?centerStocksFor(i.id):null;
-    const target=center==='FARMÁCIA'?'FARMACIA':'ALMOXARIFADO';
-    const hasCenterRecord=!!(i&&(cache.stockCenters||[]).some(sc=>String(sc.item_id)===String(i.id)&&String(sc.cost_center||sc.sector||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase()===target));
-    const old=i?(center==='FARMÁCIA'?c.farm:c.alm):null;
-    return {...r,item:i||null,old,diff:i?r.stock-old:null,hasCenterRecord,needsCreate:!!i&&!hasCenterRecord};
+  const allPreview=p.allRows.map(r=>{
+    const i=byCode.get(r.code),c=i?centerStocksFor(i.id):null;
+    const old=i?(r.center==='FARMÁCIA'?c.farm:c.alm):null;
+    return {...r,item:i||null,old,diff:i?r.stock-old:null};
   });
-  const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item),changed=matched.filter(x=>x.needsCreate||Math.abs(x.diff)>0.000001);
-  p.rows=rows; p.preview=preview;
-  const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</td><td>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${!x.item?'Não encontrado':x.needsCreate?'Novo no centro':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td>${x.cost==null?'—':money(x.cost)}</td></tr>`).join('');
+  const preview=allPreview.filter(r=>r.center===center);
+  const matched=preview.filter(x=>x.item),missing=preview.filter(x=>!x.item);
+  const allMatched=allPreview.filter(x=>x.item),allMissing=allPreview.filter(x=>!x.item);
+  const changed=allPreview.filter(x=>!x.item||Math.abs(Number(x.diff||0))>0.000001);
+  p.preview=preview;p.allPreview=allPreview;
+  const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:4}):'Produto novo'}</td><td><b>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:4})}</b></td><td>${!x.item?'Será cadastrado':(Math.abs(x.diff)<0.000001?'Sem alteração':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:4}))}</td></tr>`).join('');
   const options=p.centers.map(c=>`<option value="${esc(c)}" ${c===center?'selected':''}>${esc(c)}</option>`).join('');
-  openModal(`<h2>📥 Prévia — ${esc(center)}</h2><p><b>${esc(p.fileName)}</b></p><div class="field"><label>Centro de custo a atualizar</label><select id="saveStockCenterChoice" onchange="renderSaveStockPreview(this.value)">${options}</select></div><div class="kpis"><div class="kpi"><span>Centro</span><b>${esc(center)}</b></div><div class="kpi"><span>Linhas SAVE</span><b>${rows.length}</b></div><div class="kpi"><span>Encontrados</span><b>${matched.length}</b></div><div class="kpi"><span>A atualizar/criar</span><b>${changed.length}</b></div><div class="kpi"><span>Não encontrados</span><b>${missing.length}</b></div></div><p class="muted">Prévia somente leitura. Somente os produtos do centro selecionado serão enviados para atualização.</p><label style="display:flex;gap:8px;align-items:center;margin:12px 0"><input id="saveUpdateCost" type="checkbox"> Atualizar também o preço unitário global do produto pelo custo médio do SAVE</label><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo HNSS — ${esc(center)}</th><th>Saldo SAVE</th><th>Diferença</th><th>C. Médio SAVE</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar importação de ${esc(center)}</button></div>`);
+  const farmCount=p.allRows.filter(r=>r.center==='FARMÁCIA').length,almCount=p.allRows.filter(r=>r.center==='ALMOXARIFADO').length;
+  openModal(`<h2>📥 Prévia — atualização do SAVE</h2><p><b>${esc(p.fileName)}</b></p><div class="kpis"><div class="kpi"><span>FARMÁCIA</span><b>${farmCount}</b></div><div class="kpi"><span>ALMOXARIFADO</span><b>${almCount}</b></div><div class="kpi"><span>Produtos encontrados</span><b>${allMatched.length}</b></div><div class="kpi"><span>Produtos novos</span><b>${allMissing.length}</b></div><div class="kpi"><span>Linhas inválidas</span><b>${p.invalidLines.length}</b></div></div><div class="field"><label>Conferir centro de custo</label><select id="saveStockCenterChoice" onchange="renderSaveStockPreview(this.value)">${options}</select></div><p class="muted">A confirmação atualiza todos os centros presentes no arquivo de uma só vez. O saldo do SAVE substitui o saldo anterior daquele centro; não soma quantidades. Os demais centros não são alterados. Produtos ainda não cadastrados serão criados pelo código. Preços e custos não serão alterados.</p><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo atual</th><th>Novo saldo SAVE</th><th>Resultado</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas deste centro.</p>`:''}${p.invalidLines.length?`<p class="muted">${p.invalidLines.length} linha(s) com código/saldo inválido serão ignoradas. Confira o arquivo antes de confirmar.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar atualização completa do SAVE</button></div>`);
 }
 async function confirmSaveStockImport(){
   if(!pendingSaveStockImport||!sb)return;
-  const updateCost=!!document.getElementById('saveUpdateCost')?.checked,p=pendingSaveStockImport;
-  const changedRows=p.preview.filter(x=>x.item&&(x.needsCreate||Math.abs(Number(x.diff||0))>0.000001||(updateCost&&x.cost!=null)));
-  if(!changedRows.length){pendingSaveStockImport=null;closeModal();toast(`${p.center}: nenhum saldo diferente e nenhum produto novo neste centro para atualizar.`);return}
-  if(!confirm(`Confirmar ${changedRows.length} alteração(ões) no centro ${p.center}?${updateCost?"\n\nA opção de custo atualizará o preço unitário global do produto, usado nas estimativas de compras.":""}`))return;
+  const p=pendingSaveStockImport;
+  if(!p.allRows?.length)return;
+  const summary=p.centers.map(c=>c+': '+p.allRows.filter(r=>r.center===c).length+' itens').join('\n');
+  if(!confirm(`Substituir os saldos pelos valores deste arquivo?\n\n${summary}\n\nA importação atualiza somente FARMÁCIA e ALMOXARIFADO presentes no arquivo. Não soma os saldos e não altera preços.`))return;
   try{
-    const payload=changedRows.map(x=>({code:x.code,stock:x.stock,cost:x.cost}));
-    const {data,error}=await sb.rpc('import_save_stock_center',{p_file_name:p.fileName,p_cost_center:p.center,p_rows:payload,p_update_cost:updateCost});
+    const payload=p.allRows.map(x=>({center:x.center,code:x.code,name:x.name,unit:x.unit,stock:x.stock}));
+    const {data,error}=await sb.rpc('import_save_stock_centers',{p_file_name:p.fileName,p_rows:payload});
     if(error)throw error;
     pendingSaveStockImport=null;closeModal();await refresh();renderStock();
-    toast(`${data?.cost_center||p.center}: ${data?.updated??0} saldo(s) atualizado(s) · ${data?.cost_updated??0} preço(s) global(is) atualizado(s) · ${data?.not_found??0} não encontrado(s).`);
-  }catch(e){console.error(e);toast('Não foi possível importar o estoque por centro: '+(e.message||e))}
+    const details=(data?.centers||[]).map(x=>`${x.cost_center}: ${x.updated} saldo(s)`).join(' · ');
+    toast(`SAVE atualizado: ${details||data?.updated+' saldo(s)'} · ${data?.created_products||0} produto(s) novo(s).`);
+  }catch(e){console.error(e);toast('Não foi possível atualizar o estoque: '+(e.message||e));}
 }
 
 function renderProducts(){
