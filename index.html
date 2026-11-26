@@ -306,7 +306,7 @@ const CONFIG={url:'https://hdvahhymnrdsjrwzoroy.supabase.co',anonKey:'sb_publish
 let sessionRefreshPromise=null;
 const $=id=>document.getElementById(id); const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(t){$('toast').textContent=t;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2500)}
-function status(i){let av=Number(i.current_stock||0)-Number(i.reserved_qty||0)+Number(i.on_order_qty||0), min=Number(i.min_stock||0), pp=Number(i.reorder_point||min); if(av<=0)return ['Crítico','crit']; if(av<=min)return ['Abaixo do mínimo','crit']; if(av<=pp)return ['Ponto de pedido','warn']; return ['Adequado','ok']}
+function status(i){let av=Number(stockForOperational(i)??0)-Number(i.reserved_qty||0)+Number(i.on_order_qty||0), min=Number(i.min_stock||0), pp=Number(i.reorder_point||min); if(av<=0)return ['Crítico','crit']; if(av<=min)return ['Abaixo do mínimo','crit']; if(av<=pp)return ['Ponto de pedido','warn']; return ['Adequado','ok']}
 async function ensureFreshSession(force=false){
   if(!sb)throw new Error('Supabase não inicializado');
   const r=await sb.auth.getSession();
@@ -438,7 +438,7 @@ async function refresh(){
   cache.items=await loadItemsReliable();
   const jobs=[['suppliers','suppliers',{order:'name'}],['purchases','purchase_requests',{order:'created_at'}],['requestItems','purchase_request_items',{order:'id'}],['quotes','purchase_quotes',{order:'received_at'}],['consultations','purchase_supplier_consultations',{order:'created_at'}],['audit','purchase_audit_log',{order:'changed_at'}],['profiles','profiles',{order:'name'}],['receipts','purchase_receipts',{order:'created_at'}],['receiptItems','purchase_receipt_items',{order:'id'}],['stockMovements','stock_movements',{order:'created_at',limit:30}]];
   await Promise.all(jobs.map(async([key,table,opts])=>{try{cache[key]=await query(table,opts)}catch(e){console.warn('Falha ao carregar '+table,e);cache[key]=cache[key]||[]}}));
-  try{cache.stockCenters=await query('item_stock_centers',{order:'id'})}catch(e){console.warn('Falha ao carregar estoques por centro',e);cache.stockCenters=cache.stockCenters||[]}
+  try{cache.stockCenters=(await query('item_stock_centers',{order:'id'})).filter(x=>x.save_active===true&&['FARMACIA','ALMOXARIFADO'].includes(operationalCenter(x.cost_center||x.sector)))}catch(e){console.warn('Falha ao carregar estoques por centro',e);cache.stockCenters=[]}
   cache.orders=[];cache._stockSorted=null;cache._stockSearchIndex=null;
   if(sb&&session) await syncSupplierDirectoryToDatabase(false);
 }
@@ -514,11 +514,10 @@ function abcStockFor(i,center='PRINCIPAL'){
   if(center==='FARMÁCIA')return s.farm;
   if(center==='ALMOXARIFADO')return s.alm;
   if(center==='TOTAL')return s.total;
-  const pref=String(i.purchase_stock_center||'').toUpperCase();
-  return pref==='ALMOXARIFADO'?s.alm:pref==='TOTAL'?s.total:s.farm;
+  return s.total;
 }
 function abcRows(mode='valor_consumo',center='PRINCIPAL'){
-  const items=cache.items||[];
+  const items=operationalItems();
   const rows=items.map(i=>{
     const price=Math.max(0,Number(i.last_unit_price||0));
     const factor=Math.max(0,Number(i.consumption_units_per_stock_unit||0));
@@ -705,12 +704,14 @@ function mountExecutivePanel(){
   host.appendChild(card);
 }
 
+function operationalCenter(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();}
+function operationalItems(){const ids=new Set((cache.stockCenters||[]).filter(x=>x.save_active===true&&['FARMACIA','ALMOXARIFADO'].includes(operationalCenter(x.cost_center||x.sector))).map(x=>String(x.item_id)));return (cache.items||[]).filter(i=>ids.has(String(i.id)));}
 function centerStocksFor(itemId){
-  const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(itemId));
-  const farm=rows.find(x=>String(x.cost_center||x.sector||'').toUpperCase()==='FARMÁCIA');
-  const alm=rows.find(x=>String(x.cost_center||x.sector||'').toUpperCase()==='ALMOXARIFADO');
-  const farmQty=Number(farm?.current_stock??farm?.quantity??0), almQty=Number(alm?.current_stock??alm?.quantity??0);
-  return {farm:farmQty,alm:almQty,total:farmQty+almQty};
+ const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(itemId));
+ const farm=rows.find(x=>operationalCenter(x.cost_center||x.sector)==='FARMACIA');
+ const alm=rows.find(x=>operationalCenter(x.cost_center||x.sector)==='ALMOXARIFADO');
+ const farmQty=Number(farm?.quantity??farm?.current_stock??farm?.stock??0),almQty=Number(alm?.quantity??alm?.current_stock??alm?.stock??0);
+ return {farm:farmQty,alm:almQty,total:farmQty+almQty,hasFarm:!!farm,hasAlm:!!alm};
 }
 function detectSaveCostCenter(text){
   // O relatório Produtos - Balanço - Centro Custo do SAVE pode trazer
@@ -732,7 +733,7 @@ function detectSaveCostCenter(text){
 }
 
 function renderStock(){
-  const all=[...(cache.items||[])];
+  const all=operationalItems();
   if(!cache._stockSorted){
     const collator=new Intl.Collator('pt-BR',{sensitivity:'base',numeric:true});
     cache._stockSorted=[...all].sort((a,b)=>collator.compare(String(a.name||''),String(b.name||'')));
@@ -746,7 +747,7 @@ function renderStock(){
     return `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td><b>${c.farm.toLocaleString('pt-BR')}</b></td><td><b>${c.alm.toLocaleString('pt-BR')}</b></td><td><b>${c.total.toLocaleString('pt-BR')}</b> ${esc(i.unit)}</td><td>${i.min_stock}</td><td>${cov===999?'—':cov.toFixed(0)+' d'}</td><td>${q}</td><td><button class="secondary" onclick="editItem('${i.id}')">Editar</button></td></tr>`
   }).join('');
   const entries=(cache.stockMovements||[]).filter(m=>String(m.type||'').toLowerCase().includes('entrada')).slice(0,10).map(m=>{const it=cache.items.find(i=>String(i.id)===String(m.item_id));return `<tr><td>${m.created_at?new Date(m.created_at).toLocaleString('pt-BR'):'-'}</td><td>${esc(it?.code||'-')}</td><td>${esc(it?.name||'-')}</td><td>${Number(m.quantity||0)} ${esc(it?.unit||'')}</td><td>${money(m.unit_cost||0)}</td><td>${esc(m.reference||'-')}</td></tr>`}).join('');
-  $('page-estoque').innerHTML=`<div class="card panel"><div class="toolbar"><input id="stockSearch" placeholder="Buscar item..." oninput="filterStock()"><span id="stockSearchNote" class="muted" style="font-size:12px;margin-left:6px">Digite para buscar</span><button class="primary" onclick="document.getElementById('saveStockFile').click()">📥 Importar estoque do SAVE</button><input id="saveStockFile" type="file" accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveStockFile(this.files[0]);this.value=''"><button class="secondary" onclick="exportCSV()">Exportar CSV</button><button class="secondary" onclick="refresh().then(()=>renderStock())">🔄 Atualizar</button></div><h2>📦 Estoque por centro de custo</h2><p class="muted">Farmácia e Almoxarifado são mantidos separadamente. O Total disponível é a soma dos dois centros.</p><div class="table-wrap"><table class="table" id="stockTable"><thead><tr><th>Código</th><th>Item</th><th>Farmácia</th><th>Almoxarifado</th><th>Total disponível</th><th>Mín.</th><th>Cobertura</th><th>Sugestão</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=9>Nenhum item.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">🧾 Últimas entradas de compras</h3><div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Quantidade</th><th>Custo unitário</th><th>Referência</th></tr></thead><tbody>${entries||'<tr><td colspan=6>Nenhuma entrada registrada.</td></tr>'}</tbody></table></div></div>`;
+  $('page-estoque').innerHTML=`<div class="card panel"><div class="toolbar"><input id="stockSearch" placeholder="Buscar item..." oninput="filterStock()"><span id="stockSearchNote" class="muted" style="font-size:12px;margin-left:6px">Digite para buscar</span><button class="primary" onclick="document.getElementById('saveStockFile').click()">📥 Importar estoque do SAVE</button><input id="saveStockFile" type="file" multiple accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveStockFile(Array.from(this.files));this.value=''"><button class="secondary" onclick="exportCSV()">Exportar CSV</button><button class="secondary" onclick="refresh().then(()=>renderStock())">🔄 Atualizar</button></div><h2>📦 Estoque por centro de custo</h2><p class="muted">Farmácia e Almoxarifado são mantidos separadamente. O Total disponível é a soma dos dois centros.</p><div class="table-wrap"><table class="table" id="stockTable"><thead><tr><th>Código</th><th>Item</th><th>Farmácia</th><th>Almoxarifado</th><th>Total disponível</th><th>Mín.</th><th>Cobertura</th><th>Sugestão</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=9>Nenhum item.</td></tr>'}</tbody></table></div><h3 style="margin-top:24px">🧾 Últimas entradas de compras</h3><div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Quantidade</th><th>Custo unitário</th><th>Referência</th></tr></thead><tbody>${entries||'<tr><td colspan=6>Nenhuma entrada registrada.</td></tr>'}</tbody></table></div></div>`;
 }
 let stockSearchTimer=0;
 function filterStock(){
@@ -791,37 +792,41 @@ function parseCommaSeparatedLine(line){
 function parseSaveBalanceIntegerParts(whole,decimal){
   const a=String(whole??'').trim(),b=String(decimal??'').trim();
   if(!a)return null;
-  // No relatório CHR, valores inteiros aparecem duplicados nas duas colunas.
-  // Quando são diferentes, representam a parte decimal (ex.: 0 e 60 = 0,60).
-  return parseBRNumber(a===b||!b?a:a+','+b);
+  // Campos divergentes exigem confirmação explícita do operador.
+  if(b&&a!==b){const chosen=prompt('SAVE: campos de saldo divergentes ('+a+' / '+b+'). Informe o saldo confirmado no SAVE ou cancele a importação.','');if(chosen===null||!chosen.trim())throw new Error('Saldo divergente não confirmado.');return parseBRNumber(chosen);}
+  return parseBRNumber(a);
 }
-async function previewSaveStockFile(file){
-  if(!file)return;
+async function previewSaveStockFile(files){
+  if(!files?.length)return;
+  pendingSaveStockImport=null;
   try{
+    const allRows=[],centers=new Set(),invalid=[];
+    for(const file of files){
     const buf=await file.arrayBuffer();
     let text;
-    try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
+    try{text=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(_){text=new TextDecoder('windows-1252').decode(buf)}
     text=text.replace(/^\uFEFF/,'');
-    const allRows=[],centers=new Set(),invalid=[];
     const lines=text.split(/\r?\n/);
     for(let index=0;index<lines.length;index++){
       const line=lines[index];if(!line.trim())continue;
-      const commaFormat=/^\s*"?Produtos - Balanço - Centro Custo/i.test(line);
+      const commaFormat=parseCommaSeparatedLine(line).length>=18;
       const c=commaFormat?parseCommaSeparatedLine(line):parseSeparatedLine(line);
       const rawCenter=String(c[10]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
       if(rawCenter!=='FARMACIA'&&rawCenter!=='ALMOXARIFADO')continue;
       const center=rawCenter==='FARMACIA'?'FARMÁCIA':'ALMOXARIFADO';
       const code=String(c[11]||'').trim();
       const stock=commaFormat?parseSaveBalanceIntegerParts(c[14],c[15]):parseBRNumber(c[14]);
-      if(!/^\d+$/.test(code)||stock===null||stock<0){invalid.push(index+1);continue;}
+      if(!/^\d+$/.test(code)||stock===null||stock<0){invalid.push(file.name+":"+(index+1));continue;}
       allRows.push({center,code,name:String(c[12]||'').trim(),unit:String(c[13]||'').trim(),stock});
       centers.add(center);
     }
+    }
+    if(invalid.length)throw new Error("Linhas inválidas: "+invalid.slice(0,10).join(", "));
     if(!allRows.length){toast('Não encontrei linhas válidas de FARMACIA ou ALMOXARIFADO no arquivo.');return;}
     const seen=new Set();
     for(const r of allRows){const k=r.center+'|'+r.code;if(seen.has(k))throw new Error('Código duplicado no arquivo: '+r.code+' ('+r.center+'). Importação cancelada para evitar saldo ambíguo.');seen.add(k);}
     const orderedCenters=['FARMÁCIA','ALMOXARIFADO'].filter(c=>centers.has(c));
-    pendingSaveStockImport={fileName:file.name,allRows,centers:orderedCenters,center:orderedCenters[0],invalidLines:invalid};
+    pendingSaveStockImport={fileName:files.map(f=>f.name).join(" + "),allRows,centers:orderedCenters,center:orderedCenters[0],invalidLines:invalid};
     renderSaveStockPreview(pendingSaveStockImport.center);
   }catch(e){console.error(e);toast('Falha ao ler arquivo do SAVE: '+(e.message||e));}
 }
@@ -842,14 +847,14 @@ function renderSaveStockPreview(center){
   const sample=preview.slice(0,120).map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.item?Number(x.old).toLocaleString('pt-BR',{maximumFractionDigits:4}):'Produto novo'}</td><td><b>${Number(x.stock).toLocaleString('pt-BR',{maximumFractionDigits:4})}</b></td><td>${!x.item?'Será cadastrado':(Math.abs(x.diff)<0.000001?'Sem alteração':(x.diff>0?'+':'')+Number(x.diff).toLocaleString('pt-BR',{maximumFractionDigits:4}))}</td></tr>`).join('');
   const options=p.centers.map(c=>`<option value="${esc(c)}" ${c===center?'selected':''}>${esc(c)}</option>`).join('');
   const farmCount=p.allRows.filter(r=>r.center==='FARMÁCIA').length,almCount=p.allRows.filter(r=>r.center==='ALMOXARIFADO').length;
-  openModal(`<h2>📥 Prévia — atualização do SAVE</h2><p><b>${esc(p.fileName)}</b></p><div class="kpis"><div class="kpi"><span>FARMÁCIA</span><b>${farmCount}</b></div><div class="kpi"><span>ALMOXARIFADO</span><b>${almCount}</b></div><div class="kpi"><span>Produtos encontrados</span><b>${allMatched.length}</b></div><div class="kpi"><span>Produtos novos</span><b>${allMissing.length}</b></div><div class="kpi"><span>Linhas inválidas</span><b>${p.invalidLines.length}</b></div></div><div class="field"><label>Conferir centro de custo</label><select id="saveStockCenterChoice" onchange="renderSaveStockPreview(this.value)">${options}</select></div><p class="muted">A confirmação atualiza todos os centros presentes no arquivo de uma só vez. O saldo do SAVE substitui o saldo anterior daquele centro; não soma quantidades. Os demais centros não são alterados. Produtos ainda não cadastrados serão criados pelo código. Preços e custos não serão alterados.</p><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo atual</th><th>Novo saldo SAVE</th><th>Resultado</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas deste centro.</p>`:''}${p.invalidLines.length?`<p class="muted">${p.invalidLines.length} linha(s) com código/saldo inválido serão ignoradas. Confira o arquivo antes de confirmar.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar atualização completa do SAVE</button></div>`);
+  openModal(`<h2>📥 Prévia — atualização do SAVE</h2><p><b>${esc(p.fileName)}</b></p><div class="kpis"><div class="kpi"><span>FARMÁCIA</span><b>${farmCount}</b></div><div class="kpi"><span>ALMOXARIFADO</span><b>${almCount}</b></div><div class="kpi"><span>Produtos encontrados</span><b>${allMatched.length}</b></div><div class="kpi"><span>Produtos novos</span><b>${allMissing.length}</b></div><div class="kpi"><span>Linhas inválidas</span><b>${p.invalidLines.length}</b></div></div><div class="field"><label>Conferir centro de custo</label><select id="saveStockCenterChoice" onchange="renderSaveStockPreview(this.value)">${options}</select></div><p class="muted">A confirmação atualiza todos os centros presentes no arquivo de uma só vez. O saldo do SAVE substitui o saldo anterior daquele centro; não soma quantidades. Os produtos ausentes no relatório de cada centro importado ficam fora das análises, sem apagar histórico ou saldo armazenado. O outro centro permanece como estava. Produtos ainda não cadastrados serão criados pelo código. Preços e custos não serão alterados.</p><div class="table-wrap" style="max-height:420px"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Saldo atual</th><th>Novo saldo SAVE</th><th>Resultado</th></tr></thead><tbody>${sample}</tbody></table></div>${preview.length>120?`<p class="muted">Mostrando 120 de ${preview.length} linhas deste centro.</p>`:''}${p.invalidLines.length?`<p class="muted">${p.invalidLines.length} linha(s) com código/saldo inválido serão ignoradas. Confira o arquivo antes de confirmar.</p>`:''}<div class="actions"><button class="secondary" onclick="pendingSaveStockImport=null;closeModal()">Cancelar</button><button class="primary" onclick="confirmSaveStockImport()">Confirmar atualização completa do SAVE</button></div>`);
 }
 async function confirmSaveStockImport(){
   if(!pendingSaveStockImport||!sb)return;
   const p=pendingSaveStockImport;
   if(!p.allRows?.length)return;
   const summary=p.centers.map(c=>c+': '+p.allRows.filter(r=>r.center===c).length+' itens').join('\n');
-  if(!confirm(`Substituir os saldos pelos valores deste arquivo?\n\n${summary}\n\nA importação atualiza somente FARMÁCIA e ALMOXARIFADO presentes no arquivo. Não soma os saldos e não altera preços.`))return;
+  if(!confirm(`Substituir os saldos pelos valores deste arquivo?\n\n${summary}\n\nA importação atualiza somente FARMÁCIA e ALMOXARIFADO presentes no arquivo. Não soma os saldos e não altera preços. Produtos ausentes no relatório completo deixam de aparecer nas análises do centro importado.`))return;
   try{
     const payload=p.allRows.map(x=>({center:x.center,code:x.code,name:x.name,unit:x.unit,stock:x.stock}));
     const {data,error}=await sb.rpc('import_save_stock_centers',{p_file_name:p.fileName,p_rows:payload});
@@ -861,7 +866,7 @@ async function confirmSaveStockImport(){
 }
 
 function renderProducts(){
-  const items=cache.items||[];
+  const items=operationalItems();
   const rows=items.slice(0,120).map(i=>`<tr><td>${esc(i.code||'-')}</td><td>${esc(i.name||'-')}</td><td>${esc(i.unit||'-')}</td><td>${money(i.last_unit_price||0)}</td><td>${i.updated_at?new Date(i.updated_at).toLocaleDateString('pt-BR'):'-'}</td><td><button class="secondary" onclick="editProduct('${i.id}')">✏️ Editar</button></td></tr>`).join('');
   $('page-produtos').innerHTML=`<div class="card panel">
     <div class="toolbar">
@@ -881,7 +886,7 @@ function renderProducts(){
 }
 function normalizeSearch(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
 let productSearchTimer=0;
-function filterProducts(){clearTimeout(productSearchTimer);productSearchTimer=setTimeout(()=>{const v=normalizeSearch($('productSearch')?.value||'');const all=cache.items||[];const matches=v?all.filter(i=>normalizeSearch(String(i.code||'')+' '+String(i.name||'')+' '+String(i.unit||'')).includes(v)):all.slice(0,120);const limited=matches.slice(0,120);const tbody=document.querySelector('#productTable tbody');if(!tbody)return;tbody.innerHTML=limited.map(i=>`<tr><td>${esc(i.code||'-')}</td><td>${esc(i.name||'-')}</td><td>${esc(i.unit||'-')}</td><td>${money(i.last_unit_price||0)}</td><td>${i.updated_at?new Date(i.updated_at).toLocaleDateString('pt-BR'):'-'}</td><td><button class="secondary" onclick="editProduct('${i.id}')">✏️ Editar</button></td></tr>`).join('')||'<tr><td colspan="6">Nenhum produto encontrado.</td></tr>';const note=document.getElementById('productImportSummary');if(note)note.textContent=matches.length>120?`Mostrando 120 de ${matches.length} resultados.`:`${matches.length} resultado(s).`;},100)}
+function filterProducts(){clearTimeout(productSearchTimer);productSearchTimer=setTimeout(()=>{const v=normalizeSearch($('productSearch')?.value||'');const all=operationalItems();const matches=v?all.filter(i=>normalizeSearch(String(i.code||'')+' '+String(i.name||'')+' '+String(i.unit||'')).includes(v)):all.slice(0,120);const limited=matches.slice(0,120);const tbody=document.querySelector('#productTable tbody');if(!tbody)return;tbody.innerHTML=limited.map(i=>`<tr><td>${esc(i.code||'-')}</td><td>${esc(i.name||'-')}</td><td>${esc(i.unit||'-')}</td><td>${money(i.last_unit_price||0)}</td><td>${i.updated_at?new Date(i.updated_at).toLocaleDateString('pt-BR'):'-'}</td><td><button class="secondary" onclick="editProduct('${i.id}')">✏️ Editar</button></td></tr>`).join('')||'<tr><td colspan="6">Nenhum produto encontrado.</td></tr>';const note=document.getElementById('productImportSummary');if(note)note.textContent=matches.length>120?`Mostrando 120 de ${matches.length} resultados.`:`${matches.length} resultado(s).`;},100)}
 function productForm(item={}){openModal(`<h2>${item.id?'✏️ Editar produto':'➕ Novo produto'}</h2>
   <div class="form-grid"><div class="field"><label>Código</label><input id="pr_code" value="${esc(item.code||'')}" ${item.id?'readonly':''}></div>
   <div class="field"><label>Nome do produto</label><input id="pr_name" value="${esc(item.name||'')}"></div>
@@ -1534,7 +1539,7 @@ async function deletePurchase(id){
 let editReqSelection={};
 function renderEditReqRows(){
   const v=normalizeSearch($('editReqSearch')?.value||'');
-  const all=cache.items||[];
+  const all=operationalItems();
   let matches=v?all.filter(i=>normalizeSearch(i.code+' '+i.name).includes(v)):all.slice(0,80);
   const selectedIds=Object.keys(editReqSelection);
   if(v) matches=matches.slice(0,120);
@@ -2152,7 +2157,7 @@ let reqSupplierSelection=[];
 let reqAutoMode=false;
 function renderReqRows(){
   const v=normalizeSearch($('reqSearch')?.value||'');
-  const all=cache.items||[];
+  const all=operationalItems();
   let matches=v?all.filter(i=>normalizeSearch(i.code+' '+i.name).includes(v)):all.slice(0,80);
   if(v) matches=matches.slice(0,120);
   const selectedIds=Object.keys(reqSelection);
@@ -2177,7 +2182,7 @@ function renderReqRows(){
 }
 function purchaseForm(auto=false){
   reqSelection={}; reqSupplierSelection=[]; reqAutoMode=auto;
-  if(auto)(cache.items||[]).filter(i=>status(i)[1]!=='ok').forEach(i=>{reqSelection[String(i.id)]={quantity:suggestedQty(i)}});
+  if(auto)operationalItems().filter(i=>status(i)[1]!=='ok').forEach(i=>{reqSelection[String(i.id)]={quantity:suggestedQty(i)}});
   const suppliers=cache.suppliers.filter(s=>s.active!==false).map(s=>{const d=SUPPLIER_DIRECTORY.find(x=>String(x.name||'').trim().toLowerCase()===String(s.name||'').trim().toLowerCase());return {...s,_dir:d,_distance:d?supplierDistanceKm(d):1200,_verified:!!d?.verified,_logistics:Number(d?.logisticsScore||0)}}).sort((a,b)=>a._distance-b._distance||Number(b._verified)-Number(a._verified)||b._logistics-a._logistics||String(a.name).localeCompare(String(b.name),'pt-BR'));
   const opts=suppliers.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} · ${s._distance<1200?'≈ '+s._distance+' km':''}${s.order_email||s.email?' — '+esc(s.order_email||s.email):''}</option>`).join('');
   openModal(`<h2>${auto?'Sugestão automática de compra':'Nova requisição de compra'}</h2><div class="field"><label>Fornecedores para cotação <span class="muted">(adicione um fornecedor por vez)</span></label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="p_supplier" style="flex:1;min-width:240px"><option value="">Selecione o fornecedor</option>${opts}</select><button type="button" class="secondary" onclick="addReqSupplier()">+ Adicionar</button></div><div id="reqSupplierSelected" style="margin-top:10px"></div>${suppliers.length?`<div class="muted" style="margin-top:6px">${suppliers.length} fornecedor(es) disponíveis. Selecione um, clique em Adicionar e depois escolha o próximo.</div>`:'<div class="muted" style="margin-top:6px">Cadastre primeiro um fornecedor em Fornecedores.</div>'}</div><div class="field"><label>Justificativa</label><input id="p_reason" value="Reposição de estoque"></div><div class="field"><label>Observação</label><input id="p_note" placeholder="Observação da requisição"></div><div class="toolbar"><input id="reqSearch" placeholder="Buscar item por código ou nome..." oninput="filterReqItems()"></div><p class="muted" style="margin:6px 0">Digite o código ou nome para localizar rapidamente. Os itens selecionados permanecem na lista.</p><div class="table-wrap" style="max-height:58vh"><table class="table" id="reqItemsTable"><thead><tr><th>✓</th><th>Código</th><th>Item</th><th>Estoque</th><th>Qtd.</th><th>Preço</th></tr></thead><tbody></tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPurchase()">Criar requisição</button></div>`);
@@ -2262,7 +2267,7 @@ function exportExecutiveReport(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));a.download='hnss_relatorio_executivo_suprimentos.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Relatório executivo exportado.');
 }
 function openClinicalPriority(){
-  const rows=(cache.items||[]).map(i=>{const stock=stockForOperational(i),c30=Number(i.consumption_30d||0),days=c30>0&&stock!==null?stock/(c30/30):null,critical=String(i.criticality||'').toLowerCase(),abc=String(i.abc_class||'').toUpperCase();let score=0;if(days!==null&&days<=7)score+=4;else if(days!==null&&days<=15)score+=2;if(critical.includes('alta')||critical.includes('high')||critical==='a')score+=4;if(abc==='A')score+=2;const level=score>=7?'Muito alta':score>=4?'Alta':score>=2?'Média':'Baixa';return {i,days,abc,critical,score,level}}).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score).slice(0,100);
+  const rows=operationalItems().map(i=>{const stock=stockForOperational(i),c30=Number(i.consumption_30d||0),days=c30>0&&stock!==null?stock/(c30/30):null,critical=String(i.criticality||'').toLowerCase(),abc=String(i.abc_class||'').toUpperCase();let score=0;if(days!==null&&days<=7)score+=4;else if(days!==null&&days<=15)score+=2;if(critical.includes('alta')||critical.includes('high')||critical==='a')score+=4;if(abc==='A')score+=2;const level=score>=7?'Muito alta':score>=4?'Alta':score>=2?'Média':'Baixa';return {i,days,abc,critical,score,level}}).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score).slice(0,100);
   const body=rows.map(x=>'<tr><td><b>'+esc(x.i.code||'-')+'</b></td><td>'+esc(x.i.name||'-')+'</td><td><span class="badge '+(x.level==='Muito alta'?'crit':x.level==='Alta'?'warn':'')+'">'+x.level+'</span></td><td>'+esc(x.abc||'-')+'</td><td>'+esc(x.i.criticality||'Não definida')+'</td><td>'+ (x.days===null?'—':fmtInt(x.days)+' dias')+'</td><td>'+x.score+'</td></tr>').join('');
   openModal('<h2>🩺 Prioridade clínica e operacional</h2><p class="muted">Combina cobertura estimada, Curva ABC e criticidade cadastrada. A classificação apoia a decisão e não substitui avaliação clínica.</p><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Prioridade</th><th>ABC</th><th>Criticidade</th><th>Cobertura</th><th>Pontos</th></tr></thead><tbody>'+ (body||'<tr><td colspan=7>Nenhum item possui critérios suficientes.</td></tr>')+'</tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>');
 }
@@ -2283,7 +2288,7 @@ function openSupplierPerformance(){
   openModal('<h2>🏢 Desempenho de fornecedores</h2><p class="muted">Painel consultivo baseado nos registros atuais. Ele será ampliado com prazo, atendimento e não conformidades quando esses dados estiverem disponíveis.</p><div class="table-wrap"><table class="table"><thead><tr><th>Fornecedor</th><th>Cotações</th><th>Aprovadas</th><th>Pedidos</th><th>Recebidos</th><th>Valor aprovado</th></tr></thead><tbody>'+ (rows||'<tr><td colspan=6>Nenhum fornecedor possui movimentação registrada.</td></tr>')+'</tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>');
 }
 function openDemandForecast(){
-  const data=(cache.items||[]).map(i=>{const c30=Number(i.consumption_30d||0),c90=Number(i.consumption_90d||0),d30=c30/30,d90=c90/90;let trend='Sem histórico';if(c30>0&&c90>0){const ratio=d30/d90;trend=ratio>=1.2?'Alta':ratio<=.8?'Queda':'Estável'}return {i,c30,c90,d30,d90,trend,forecast:d30*30,stock:stockForOperational(i)}}).filter(x=>x.c30>0||x.c90>0).sort((a,b)=>b.d30-a.d30).slice(0,100);
+  const data=operationalItems().map(i=>{const c30=Number(i.consumption_30d||0),c90=Number(i.consumption_90d||0),d30=c30/30,d90=c90/90;let trend='Sem histórico';if(c30>0&&c90>0){const ratio=d30/d90;trend=ratio>=1.2?'Alta':ratio<=.8?'Queda':'Estável'}return {i,c30,c90,d30,d90,trend,forecast:d30*30,stock:stockForOperational(i)}}).filter(x=>x.c30>0||x.c90>0).sort((a,b)=>b.d30-a.d30).slice(0,100);
   const rows=data.map(x=>'<tr><td>'+esc(x.i.code||'-')+'</td><td><b>'+esc(x.i.name||'-')+'</b></td><td>'+fmtInt(x.c30)+'</td><td>'+fmtInt(x.c90)+'</td><td>'+fmtInt(x.forecast)+'</td><td><span class="badge '+(x.trend==='Alta'?'crit':x.trend==='Queda'?'ok':'warn')+'">'+x.trend+'</span></td><td>'+ (x.stock===null?'—':fmtInt(x.stock))+'</td></tr>').join('');
   openModal('<h2>📊 Previsão de demanda</h2><p class="muted">Projeção simples: consumo dos últimos 30 dias comparado à média dos últimos 90 dias. Use como apoio à decisão, não como compra automática.</p><div class="table-wrap"><table class="table"><thead><tr><th>Código</th><th>Produto</th><th>Consumo 30d</th><th>Consumo 90d</th><th>Projeção 30d</th><th>Tendência</th><th>Estoque</th></tr></thead><tbody>'+ (rows||'<tr><td colspan=7>Nenhum item possui histórico de consumo suficiente.</td></tr>')+'</tbody></table></div><div class="actions"><button class="secondary" onclick="closeModal()">Fechar</button></div>');
 }
@@ -2310,7 +2315,7 @@ function exportIntegrationPackage(){
   const pacote={schema:'HNSS-INTEGRACAO-1.1',gerado_em:new Date().toISOString(),finalidade:'Validação manual antes de integração com MV Soul e Apoio',somente_leitura:true,origem:'Compras Hospitalar',destinos:['MV Soul','Apoio'],quality_gate:{status:bloqueios.length?'BLOQUEADO':'PRONTO_PARA_VALIDACAO',bloqueios,alertas,observacao:'PRONTO_PARA_VALIDACAO ainda exige conferência da equipe responsável antes de importar.'},resumo:{produtos:items.length,fornecedores:fornecedores.length,com_preco:items.filter(x=>x.preco_unitario>0).length,com_consumo:items.filter(x=>x.consumo_30d>0||x.consumo_90d>0).length,bloqueios:bloqueios.length,alertas:alertas.length},produtos:items,fornecedores};
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pacote,null,2)],{type:'application/json'}));a.download='hnss_pacote_integracao_mv_apoio.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast(bloqueios.length?'Pacote exportado com bloqueios para revisão.':'Pacote de integração exportado para validação.');
 }
-function exportCSV(){let h=['Código','Item','Unidade','Estoque','Mínimo','Máximo','Ponto de pedido','Consumo 30d','Consumo 90d','Preço'];let r=cache.items.map(i=>[i.code,i.name,i.unit,stockForOperational(i)??'',i.min_stock,i.max_stock,i.reorder_point,i.consumption_30d,i.consumption_90d,i.last_unit_price]);let csv=[h,...r].map(x=>x.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='estoque_hospitalar.csv';a.click()}
+function exportCSV(){let h=['Código','Item','Unidade','Estoque','Mínimo','Máximo','Ponto de pedido','Consumo 30d','Consumo 90d','Preço'];let r=operationalItems().map(i=>[i.code,i.name,i.unit,stockForOperational(i)??'',i.min_stock,i.max_stock,i.reorder_point,i.consumption_30d,i.consumption_90d,i.last_unit_price]);let csv=[h,...r].map(x=>x.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='estoque_hospitalar.csv';a.click()}
 $('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};boot();
 
 async function approvePurchase(id){
@@ -2466,22 +2471,8 @@ function purchaseApprovalView(id){
 function intelNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function intelMoney(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(intelNum(v))}
 let intelCenterFilter='PRINCIPAL';
-function purchaseCenterFor(i){
-  const pref=String(i.purchase_stock_center||'').toUpperCase();
-  if(pref==='FARMÁCIA'||pref==='ALMOXARIFADO'||pref==='TOTAL')return pref;
-  const c=centerStocksFor(i.id);
-  if(c.farm!==0&&c.alm===0)return 'FARMÁCIA';
-  if(c.alm!==0&&c.farm===0)return 'ALMOXARIFADO';
-  return 'TOTAL';
-}
-function intelStockStatus(i,filter=intelCenterFilter){
-  const rows=(cache.stockCenters||[]).filter(sc=>String(sc.item_id)===String(i.id));
-  const center=filter==='PRINCIPAL'?purchaseCenterFor(i):filter;
-  const farm=rows.some(sc=>String(sc.cost_center||sc.sector||'').toUpperCase()==='FARMÁCIA');
-  const alm=rows.some(sc=>String(sc.cost_center||sc.sector||'').toUpperCase()==='ALMOXARIFADO');
-  const synced=center==='FARMÁCIA'?farm:center==='ALMOXARIFADO'?alm:(farm||alm);
-  return {center,farm,alm,synced};
-}
+function purchaseCenterFor(i){return 'TOTAL';}
+function intelStockStatus(i,filter=intelCenterFilter){const c=centerStocksFor(i.id),center=filter==='PRINCIPAL'?'TOTAL':filter;return {center,farm:c.hasFarm,alm:c.hasAlm,synced:center==='FARMÁCIA'?c.hasFarm:center==='ALMOXARIFADO'?c.hasAlm:c.hasFarm||c.hasAlm};}
 function stockForIntel(i,filter=intelCenterFilter){
   const c=centerStocksFor(i.id),st=intelStockStatus(i,filter);
   if(!st.synced)return null;
@@ -2526,8 +2517,8 @@ function intelABCMap(){
   abcRows('valor_consumo',center).forEach(x=>m.set(x.id,x.abc));
   return m;
 }
-function buildIntelRows(){const abcMap=intelABCMap();return (cache.items||[]).map(i=>{const cv=intelConsumptionConversion(i),[priority,score]=intelPriority(i),stock=stockForIntel(i),center=intelCenterFilter==='PRINCIPAL'?purchaseCenterFor(i):intelCenterFilter,synced=stock!==null,max=intelNum(i.max_stock),pp=intelNum(i.reorder_point),c30=intelC30StockUnits(i),on=intelNum(i.on_order_qty),abc=abcMap.get(i.id)||'—';let target=(cv.ok&&c30!==null)?(max>0?max:(pp>0?pp*2:Math.ceil(c30))):0;let suggested=(synced&&cv.ok)?Math.max(0,target-stock-on):0;const lot=Math.max(1,intelNum(i.lot_size)||1);if(suggested>0)suggested=Math.ceil(suggested/lot)*lot;const abcRank=abc==='A'?3:abc==='B'?2:abc==='C'?1:0;return {...i,priority,score,abc,abcRank,days:intelDays(i),stockCenter:center,intelStock:stock,synced,conversion:cv,c30Stock:c30,suggested,on,target,value:suggested*intelNum(i.last_unit_price)}}).filter(x=>x.suggested>0).sort((a,b)=>b.abcRank-a.abcRank||b.score-a.score||((a.days??999)-(b.days??999))||b.value-a.value)}
-function renderInteligencia(){const allItems=(cache.items||[]),unsynced=allItems.filter(i=>stockForIntel(i)===null),conversionPending=allItems.filter(i=>stockForIntel(i)!==null&&!intelConsumptionConversion(i).ok&&intelNum(i.consumption_30d)>0),rows=buildIntelRows(),urgent=rows.filter(x=>x.priority==='Urgente').length,high=rows.filter(x=>x.priority==='Alta').length,abcA=rows.filter(x=>x.abc==='A').length,total=rows.reduce((a,x)=>a+x.value,0),covered=rows.filter(x=>x.days!==null&&x.days<15).length;let html=`<div class="intel-hero"><div style="font-size:13px;opacity:.85;font-weight:700">PLANEJAMENTO AVANÇADO</div><h2 style="margin:5px 0 8px">Inteligência de Compras</h2><div style="opacity:.9">Reposição calculada com o saldo do centro selecionado e integrada à Curva ABC por valor de consumo. Itens A aparecem primeiro, sem alterar automaticamente a quantidade sugerida.</div></div><div class="card" style="padding:14px;margin-bottom:16px"><b>Estoque usado no cálculo:</b> <select onchange="setIntelCenter(this.value)" style="margin-left:8px;padding:8px"><option value="PRINCIPAL" ${intelCenterFilter==='PRINCIPAL'?'selected':''}>Centro principal de cada produto</option><option value="FARMÁCIA" ${intelCenterFilter==='FARMÁCIA'?'selected':''}>Somente Farmácia</option><option value="ALMOXARIFADO" ${intelCenterFilter==='ALMOXARIFADO'?'selected':''}>Somente Almoxarifado</option><option value="TOTAL" ${intelCenterFilter==='TOTAL'?'selected':''}>Total consolidado</option></select><div class="muted" style="margin-top:6px">Produtos existentes nos dois centros foram inicialmente classificados como TOTAL e podem ser ajustados individualmente no cadastro do item.</div>${unsynced.length?`<div style="margin-top:10px;padding:10px;border:1px solid #f0b429;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>⚠ ${unsynced.length} produto(s) não presentes no universo SAVE deste filtro.</b><div class="muted">Eles ficam fora das sugestões automáticas; ausência no relatório não é tratada como saldo zero.</div></div><button class="secondary" onclick="showIntelUnsynced()">Ver produtos</button></div>`:''}${conversionPending.length?`<div style="margin-top:10px;padding:10px;border:1px solid #d97706;border-radius:8px"><b>🧪 ${conversionPending.length} produto(s) bloqueados por conversão de unidade.</b><div class="muted">Nenhum consumo entra na compra automática sem fator e validação explícita, inclusive UN/UND. Isso evita interpretar UI, doses ou outras unidades clínicas como unidade de compra.</div><button class="secondary" style="margin-top:7px" onclick="showConversionPending()">Resolver conversões</button></div>`:''}</div><div class="intel-grid"><div class="intel-kpi"><div class="muted">Itens para reposição</div><div class="v">${rows.length}</div></div><div class="intel-kpi"><div class="muted">Produtos sincronizados</div><div class="v">${allItems.length-unsynced.length}</div></div><div class="intel-kpi"><div class="muted">Classe A para reposição</div><div class="v">${abcA}</div></div><div class="intel-kpi"><div class="muted">Urgentes</div><div class="v">${urgent}</div></div><div class="intel-kpi"><div class="muted">Prioridade alta</div><div class="v">${high}</div></div><div class="intel-kpi"><div class="muted">Valor estimado</div><div class="v" style="font-size:22px">${intelMoney(total)}</div></div></div><div class="card" style="padding:18px;margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Recomendações de compra</h3><div class="muted">${covered} itens com cobertura inferior a 15 dias.</div></div><div class="intel-actions"><button class="secondary" onclick="document.getElementById('saveConsumptionFile').click()">📊 Importar consumo SAVE</button><input id="saveConsumptionFile" type="file" accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveConsumptionFile(this.files[0]);this.value=''"><button class="secondary" onclick="go('estoque')">Ver estoque</button><button class="primary" onclick="intelCreateReq()">Criar requisição</button><button class="secondary" onclick="HNSSPilot.open()">🧪 Simular reposição</button></div></div></div>`;
+function buildIntelRows(){const abcMap=intelABCMap();return operationalItems().map(i=>{const cv=intelConsumptionConversion(i),[priority,score]=intelPriority(i),stock=stockForIntel(i),center=intelCenterFilter==='PRINCIPAL'?purchaseCenterFor(i):intelCenterFilter,synced=stock!==null,max=intelNum(i.max_stock),pp=intelNum(i.reorder_point),c30=intelC30StockUnits(i),on=intelNum(i.on_order_qty),abc=abcMap.get(i.id)||'—';let target=(cv.ok&&c30!==null)?(max>0?max:(pp>0?pp*2:Math.ceil(c30))):0;let suggested=(synced&&cv.ok)?Math.max(0,target-stock-on):0;const lot=Math.max(1,intelNum(i.lot_size)||1);if(suggested>0)suggested=Math.ceil(suggested/lot)*lot;const abcRank=abc==='A'?3:abc==='B'?2:abc==='C'?1:0;return {...i,priority,score,abc,abcRank,days:intelDays(i),stockCenter:center,intelStock:stock,synced,conversion:cv,c30Stock:c30,suggested,on,target,value:suggested*intelNum(i.last_unit_price)}}).filter(x=>x.suggested>0).sort((a,b)=>b.abcRank-a.abcRank||b.score-a.score||((a.days??999)-(b.days??999))||b.value-a.value)}
+function renderInteligencia(){const allItems=operationalItems(),unsynced=allItems.filter(i=>stockForIntel(i)===null),conversionPending=allItems.filter(i=>stockForIntel(i)!==null&&!intelConsumptionConversion(i).ok&&intelNum(i.consumption_30d)>0),rows=buildIntelRows(),urgent=rows.filter(x=>x.priority==='Urgente').length,high=rows.filter(x=>x.priority==='Alta').length,abcA=rows.filter(x=>x.abc==='A').length,total=rows.reduce((a,x)=>a+x.value,0),covered=rows.filter(x=>x.days!==null&&x.days<15).length;let html=`<div class="intel-hero"><div style="font-size:13px;opacity:.85;font-weight:700">PLANEJAMENTO AVANÇADO</div><h2 style="margin:5px 0 8px">Inteligência de Compras</h2><div style="opacity:.9">Reposição calculada com o saldo do centro selecionado e integrada à Curva ABC por valor de consumo. Itens A aparecem primeiro, sem alterar automaticamente a quantidade sugerida.</div></div><div class="card" style="padding:14px;margin-bottom:16px"><b>Estoque usado no cálculo:</b> <select onchange="setIntelCenter(this.value)" style="margin-left:8px;padding:8px"><option value="PRINCIPAL" ${intelCenterFilter==='PRINCIPAL'?'selected':''}>Centro principal de cada produto</option><option value="FARMÁCIA" ${intelCenterFilter==='FARMÁCIA'?'selected':''}>Somente Farmácia</option><option value="ALMOXARIFADO" ${intelCenterFilter==='ALMOXARIFADO'?'selected':''}>Somente Almoxarifado</option><option value="TOTAL" ${intelCenterFilter==='TOTAL'?'selected':''}>Total consolidado</option></select><div class="muted" style="margin-top:6px">Produtos existentes nos dois centros foram inicialmente classificados como TOTAL e podem ser ajustados individualmente no cadastro do item.</div>${unsynced.length?`<div style="margin-top:10px;padding:10px;border:1px solid #f0b429;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>⚠ ${unsynced.length} produto(s) não presentes no universo SAVE deste filtro.</b><div class="muted">Eles ficam fora das sugestões automáticas; ausência no relatório não é tratada como saldo zero.</div></div><button class="secondary" onclick="showIntelUnsynced()">Ver produtos</button></div>`:''}${conversionPending.length?`<div style="margin-top:10px;padding:10px;border:1px solid #d97706;border-radius:8px"><b>🧪 ${conversionPending.length} produto(s) bloqueados por conversão de unidade.</b><div class="muted">Nenhum consumo entra na compra automática sem fator e validação explícita, inclusive UN/UND. Isso evita interpretar UI, doses ou outras unidades clínicas como unidade de compra.</div><button class="secondary" style="margin-top:7px" onclick="showConversionPending()">Resolver conversões</button></div>`:''}</div><div class="intel-grid"><div class="intel-kpi"><div class="muted">Itens para reposição</div><div class="v">${rows.length}</div></div><div class="intel-kpi"><div class="muted">Produtos sincronizados</div><div class="v">${allItems.length-unsynced.length}</div></div><div class="intel-kpi"><div class="muted">Classe A para reposição</div><div class="v">${abcA}</div></div><div class="intel-kpi"><div class="muted">Urgentes</div><div class="v">${urgent}</div></div><div class="intel-kpi"><div class="muted">Prioridade alta</div><div class="v">${high}</div></div><div class="intel-kpi"><div class="muted">Valor estimado</div><div class="v" style="font-size:22px">${intelMoney(total)}</div></div></div><div class="card" style="padding:18px;margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Recomendações de compra</h3><div class="muted">${covered} itens com cobertura inferior a 15 dias.</div></div><div class="intel-actions"><button class="secondary" onclick="document.getElementById('saveConsumptionFile').click()">📊 Importar consumo SAVE</button><input id="saveConsumptionFile" type="file" accept=".chr,.csv,.txt" style="display:none" onchange="previewSaveConsumptionFile(this.files[0]);this.value=''"><button class="secondary" onclick="go('estoque')">Ver estoque</button><button class="primary" onclick="intelCreateReq()">Criar requisição</button><button class="secondary" onclick="HNSSPilot.open()">🧪 Simular reposição</button></div></div></div>`;
 if(!rows.length)html+=`<div class="card" style="padding:24px"><h3>Nenhuma reposição sugerida</h3><div class="muted">Entre os produtos sincronizados pelo SAVE, os parâmetros atuais não indicam necessidade de compra para este filtro.</div></div>`;
 else html+=`<div class="intel-table"><table><thead><tr><th>ABC</th><th>Prioridade</th><th>Produto</th><th>Centro</th><th>Estoque usado</th><th>Consumo 30d</th><th>Cobertura</th><th>Em compra</th><th>Sugerido</th><th>Valor</th></tr></thead><tbody>${rows.slice(0,150).map(x=>`<tr><td><span class="badge">${esc(x.priority)}</span></td><td><strong>${esc(x.name||'')}</strong><div class="muted" style="font-size:11px">${esc(x.code||'')}</div></td><td>${esc(x.stockCenter)}</td><td><strong>${intelNum(x.intelStock)}</strong></td><td>${x.c30Stock===null?'—':intelNum(x.c30Stock)}<div class="muted" style="font-size:10px">${esc(x.consumption_unit||'')} ${x.conversion?.factor&&x.conversion.factor!==1?'÷ '+intelNum(x.conversion.factor):''}</div></td><td>${x.days===null?'—':Math.round(x.days)+' dias'}</td><td>${intelNum(x.on_order_qty)}</td><td><strong>${intelNum(x.suggested)}</strong></td><td>${intelMoney(x.value)}</td></tr>`).join('')}</tbody></table></div>`;$('page-inteligencia').innerHTML=html}
 
@@ -2545,7 +2536,7 @@ async function previewSaveConsumptionFile(file){
   if(!file)return;
   try{
     const buf=await file.arrayBuffer();let text;
-    try{text=new TextDecoder('windows-1252').decode(buf)}catch(_){text=new TextDecoder('utf-8').decode(buf)}
+    try{text=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(_){text=new TextDecoder('windows-1252').decode(buf)}
     const pm=text.match(/Per[íi]odo:\s*(\d{2}\/\d{2}\/\d{4})\s*[àa]\s*(\d{2}\/\d{2}\/\d{4})/i);
     if(!pm){toast('Não consegui identificar o período do relatório de consumo.');return}
     const periodStart=parseSaveDateBR(pm[1]),periodEnd=parseSaveDateBR(pm[2]),periodDays=daysInclusive(periodStart,periodEnd);
@@ -2645,7 +2636,7 @@ function renderPreditivo(){const rows=predictiveRows();const urgent=rows.filter(
 </style>
 <script id="hnss-6126-dashboard-script">
 function renderDashboard(){
- const items=cache.items||[], purchases=cache.purchases||[], receipts=cache.receipts||[];
+ const items=operationalItems(), purchases=cache.purchases||[], receipts=cache.receipts||[];
  const synced=items.filter(i=>{const s=centerStocksFor(i.id);return (cache.stockCenters||[]).some(x=>String(x.item_id)===String(i.id))});
  let intel=[]; try{intel=buildIntelRows()}catch(e){console.warn('Dashboard inteligência',e)}
  const abcA=intel.filter(x=>x.abc==='A'), low=intel.filter(x=>x.days!==null&&x.days<15), urgent=intel.filter(x=>x.priority==='Urgente'||x.priority==='Alta');
@@ -2668,7 +2659,7 @@ function renderDashboard(){
 </style>
 <script id="hnss-dashboard-v2-script">
 function renderDashboard(){
- const items=cache.items||[], purchases=cache.purchases||[], receipts=cache.receipts||[];
+ const items=operationalItems(), purchases=cache.purchases||[], receipts=cache.receipts||[];
  const synced=items.filter(i=>(cache.stockCenters||[]).some(x=>String(x.item_id)===String(i.id)));
  let intel=[];try{intel=buildIntelRows()}catch(e){console.warn('Dashboard inteligência',e)}
  const abcA=intel.filter(x=>x.abc==='A'),low=intel.filter(x=>x.days!==null&&x.days<15),urgent=intel.filter(x=>x.priority==='Urgente'||x.priority==='Alta');
@@ -2778,15 +2769,7 @@ const HNSSPilot = (() => {
 })();
 </script>
 <script id="hnss-6130-save-authority">
-function stockForOperational(i){
-  if(!i?.id)return null;
-  const rows=(cache.stockCenters||[]).filter(x=>String(x.item_id)===String(i.id));
-  if(!rows.length)return null;
-  const x=centerStocksFor(i.id), pref=String(i.purchase_stock_center||'').toUpperCase();
-  if(pref==='ALMOXARIFADO')return Number(x.alm||0);
-  if(pref==='TOTAL')return Number(x.total||0);
-  return Number(x.farm||0);
-}
+function stockForOperational(i){if(!i?.id)return null;const c=centerStocksFor(i.id);return c.hasFarm||c.hasAlm?c.total:null;}
 function predictiveRows(){
   return (cache.items||[]).map(i=>{
     const factor=Math.max(0,Number(i.consumption_units_per_stock_unit||0));
